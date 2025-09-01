@@ -123,7 +123,7 @@ const idxEl = $("#idx"), scoreEl = $("#score"), finalEl = $("#final");
 const fill = $("#fill"), flashEl = $("#flash");
 let Q = [], i = 0, score = 0, tried = new Set(), answered = false, limit = 20, left = 0, timer = 0;
 
-<script>
+
 /* add this right after your let Q = [], i = 0, ... line */
 const vKinds = [
   opts => VANTA.FOG(opts),
@@ -145,7 +145,6 @@ function setVantaNext(){
   });
   vIdx = (vIdx + 1) % vKinds.length;
 }
-</script>
 	
 	
 /* canvases */
