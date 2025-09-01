@@ -5,23 +5,26 @@
 
 <style>
   :root{
-    --bg1:#060917; --bg2:#10061a; --fg:#fff; --accent:#2dfcff; --hot:#ff2d75;
+    --fg:#fff; --accent:#2dfcff; --hot:#ff2d75;
+    --box-bg: rgba(0,0,0,.82);      /* more opaque answers */
+    --box-bg-hover: rgba(0,0,0,.9);
   }
   *{box-sizing:border-box}
   html,body{height:100%}
   body{
     margin:0; color:var(--fg);
     font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-    background:linear-gradient(135deg,var(--bg1),var(--bg2));
+    background:linear-gradient(135deg,#0a0f22,#111);
     overflow-x:hidden;
   }
 
   /* layers */
   #bg{position:fixed; inset:0; z-index:0}
+  /* lighten the page, keep BG vibrant */
   #shade{position:fixed; inset:0; z-index:1; pointer-events:none;
     background:
-      radial-gradient(1200px 600px at 50% -10%, rgba(0,0,0,.40), rgba(0,0,0,.15) 40%, rgba(0,0,0,.35) 100%),
-      linear-gradient(rgba(0,0,0,.25), rgba(0,0,0,.25));
+      radial-gradient(1000px 500px at 50% -10%, rgba(0,0,0,.15), rgba(0,0,0,.06) 40%, rgba(0,0,0,.12) 100%),
+      linear-gradient(rgba(0,0,0,.10), rgba(0,0,0,.10));
   }
   #fx{position:fixed; inset:0; z-index:2; pointer-events:none}
   #fx2{position:fixed; inset:0; z-index:3; pointer-events:none}
@@ -31,26 +34,39 @@
   /* app */
   #cam{position:relative; z-index:6; transform-origin:50% 35%}
   #wrap{max-width:1100px; margin:34px auto; padding:16px}
-  h1{margin:0 0 12px; font-size:44px; letter-spacing:.5px; display:inline-block;
-      text-shadow:0 0 18px rgba(45,252,255,.25),0 0 8px rgba(255,45,117,.18)}
+
+  /* strong readable outlines using text-shadow stack */
+  .outline{
+    text-shadow:
+      0 0 22px rgba(0,0,0,.55),
+      0 2px 0 #000, 0 -2px 0 #000, 2px 0 0 #000, -2px 0 0 #000,
+      2px 2px 0 #000, -2px 2px 0 #000, 2px -2px 0 #000, -2px -2px 0 #000;
+  }
+
+  h1{margin:0 0 12px; font-size:48px; letter-spacing:.5px; display:inline-block}
+  #title{filter:drop-shadow(0 0 16px rgba(45,252,255,.6)) drop-shadow(0 0 10px rgba(255,45,117,.35))}
   .tPulse{animation:glowPulse 2s ease} .tTilt{animation:tilt .6s ease}
   .tHue{animation:hue 3s ease} .tFlick{animation:flicker 1s linear}
-  @keyframes glowPulse{0%,100%{text-shadow:0 0 10px rgba(45,252,255,.15)}50%{text-shadow:0 0 36px rgba(45,252,255,.55)}}
-  @keyframes tilt{0%{transform:rotate(0)}50%{transform:rotate(.7deg)}100%{transform:rotate(0)}}
-  @keyframes hue{0%{filter:hue-rotate(0)}100%{filter:hue-rotate(24deg)}}
+  @keyframes glowPulse{
+    0%,100%{filter:drop-shadow(0 0 10px rgba(45,252,255,.40)) drop-shadow(0 0 6px rgba(255,45,117,.25))}
+    50%{filter:drop-shadow(0 0 34px rgba(45,252,255,.90)) drop-shadow(0 0 20px rgba(255,45,117,.55))}
+  }
+  @keyframes tilt{0%{transform:rotate(0)}50%{transform:rotate(.9deg)}100%{transform:rotate(0)}}
+  @keyframes hue{0%{filter:hue-rotate(0)}100%{filter:hue-rotate(28deg)}}
   @keyframes flicker{0%,19%,21%,23%,25%,54%,56%,100%{opacity:1}20%,24%,55%{opacity:.6}}
 
   #hud{display:flex;align-items:center;gap:10px;margin:8px 0 14px;opacity:.98}
-  #bar{position:relative;height:14px;flex:1;background:#00000055;border-radius:999px;overflow:hidden}
+  #bar{position:relative;height:14px;flex:1;background:#00000070;border-radius:999px;overflow:hidden}
   #fill{position:absolute;inset:0;width:100%;background:linear-gradient(90deg,var(--hot),var(--accent))}
-  #q{font-size:30px;margin:18px 0 12px}
+  #q{font-size:32px;margin:18px 0 12px}
 
   .opt{
     display:block;width:100%;text-align:left;margin:10px 0;padding:16px 18px;border-radius:16px;
-    border:1px solid #ffffff30;color:var(--fg);background:#00000060;backdrop-filter:blur(2px);
-    cursor:pointer;font-weight:800;transition:transform .06s ease,background .15s ease,border-color .15s ease
+    border:1px solid #ffffff30;color:var(--fg);background:var(--box-bg);backdrop-filter:blur(2px);
+    cursor:pointer;font-weight:800;transition:transform .06s ease,background .15s ease,border-color .15s ease, box-shadow .15s ease;
+    box-shadow: 0 8px 24px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.04);
   }
-  .opt:hover{transform:translateY(-1px);background:#0000007a}
+  .opt:hover{transform:translateY(-1px);background:var(--box-bg-hover)}
   .opt.ok{background:#134323;border-color:#2fff8f;box-shadow:0 0 36px rgba(46,255,143,.35)}
   .opt.no{background:#441425;border-color:#ff5b8b;box-shadow:0 0 36px rgba(255,91,139,.34)}
   .locked .opt{pointer-events:none;opacity:.95}
@@ -78,7 +94,7 @@
 
   /* transitions */
   .slice{position:absolute; top:0; left:-30%; width:30%; height:100%;
-    background:linear-gradient(135deg,rgba(45,252,255,.9),rgba(255,45,117,.9));
+    background:linear-gradient(135deg,rgba(45,252,255,.95),rgba(255,45,117,.95));
     transform:skewX(-20deg); animation:slice 420ms ease forwards}
   @keyframes slice{0%{left:-30%}100%{left:130%}}
   .ripple{position:absolute; border-radius:999px;
@@ -101,19 +117,19 @@
 
   <div id="cam">
     <div id="wrap">
-      <h1 id="title">Unhinged Trivia</h1>
+      <h1 id="title" class="outline">Unhinged Trivia</h1>
 
-      <div id="hud">
+      <div id="hud" class="outline">
         <div>Score <b id="score">0</b></div><div>•</div><div>Q <b id="idx">0</b></div>
         <div id="bar"><div id="fill"></div></div>
       </div>
 
-      <h2 id="q">Loading...</h2>
+      <h2 id="q" class="outline">Loading...</h2>
       <div id="opts"></div>
 
       <div id="done">
-        <h2>Done</h2>
-        <p>Total <b id="final">0</b></p>
+        <h2 class="outline">Done</h2>
+        <p class="outline">Total <b id="final">0</b></p>
         <div id="lbWrap">
           <div style="margin:6px 0 10px">
             <input id="name" type="text" placeholder="Your name" maxlength="24">
@@ -128,19 +144,19 @@
   </div>
 
 <script>
-/* ===========================================================
-   Core state
-=========================================================== */
+/* state */
 const CSV_URL = "https://raw.githubusercontent.com/Grouchy-Lawn-Chair/TriviaTrivia/main/questions.csv";
 const $  = s => document.querySelector(s);
 const cam = $("#cam"), title = $("#title"), wrap = $("#wrap"), qEl = $("#q"), optsEl = $("#opts");
 const idxEl = $("#idx"), scoreEl = $("#score"), finalEl = $("#final"), fill = $("#fill"), flashEl = $("#flash");
 let Q = [], i = 0, score = 0, tried = new Set(), answered = false, limit = 20, left = 0, timer = 0;
 
-/* ===========================================================
-   Helpers
-=========================================================== */
+/* helpers */
 function shuffle(a){for(let j=a.length-1;j>0;j--){const k=Math.floor(Math.random()*(j+1));[a[j],a[k]]=[a[k],a[j]]}return a}
+function setLocked(on){wrap.classList.toggle("locked",on); answered=on}
+function flash(strength=1){flashEl.style.opacity=String(Math.min(1,strength));flashEl.style.transition="opacity .25s";requestAnimationFrame(()=>{flashEl.style.opacity="0"})}
+function camShake(ms=450,amp=15){const t0=performance.now(), A=amp; function f(t){const k=Math.max(0,1-(t-t0)/ms); const x=(Math.random()*2-1)*A*k, y=(Math.random()*2-1)*A*k, r=(Math.random()*2-1)*0.9*k; cam.style.transform=`translate(${x}px,${y}px) rotate(${r}deg)`; if(k>0) requestAnimationFrame(f); else cam.style.transform=""} requestAnimationFrame(f)}
+function makeSampler(arr){let i=0, bag=arr.slice(); return function(){ if(i>=bag.length){bag=bag.slice().sort(()=>Math.random()-.5); i=0} return bag[i++] }}
 function parseCSV(txt){
   const rows=[];let row=[],cell="",inQ=false;
   for(let i=0;i<txt.length;i++){
@@ -157,25 +173,17 @@ function parseCSV(txt){
     o.qid=o.qid||idx+1; o.timeLimit=+o.timeLimit||20; return o;
   });
 }
-function setLocked(on){wrap.classList.toggle("locked",on); answered=on}
-function flash(strength=1){flashEl.style.opacity=String(Math.min(1,strength));flashEl.style.transition="opacity .25s";requestAnimationFrame(()=>{flashEl.style.opacity="0"})}
-function camShake(ms=450,amp=15){const t0=performance.now(), A=amp; function f(t){const k=Math.max(0,1-(t-t0)/ms); const x=(Math.random()*2-1)*A*k, y=(Math.random()*2-1)*A*k, r=(Math.random()*2-1)*0.9*k; cam.style.transform=`translate(${x}px,${y}px) rotate(${r}deg)`; if(k>0) requestAnimationFrame(f); else cam.style.transform=""} requestAnimationFrame(f)}
-function makeSampler(arr){let i=0, bag=arr.slice(); return function(){ if(i>=bag.length){bag=bag.slice().sort(()=>Math.random()-.5); i=0} return bag[i++] }}
 
-/* title tiny life */
+/* title life */
 function randomTitleNudge(){const cls=["tPulse","tTilt","tHue","tFlick"][Math.floor(Math.random()*4)]; title.classList.add(cls); setTimeout(()=>title.classList.remove(cls),1200)}
-setInterval(()=>{ if(Math.random()<.8) randomTitleNudge() }, 3500);
+setInterval(()=>{ if(Math.random()<.8) randomTitleNudge() }, 2800);
 
-/* ===========================================================
-   Backgrounds, all Canvas
-=========================================================== */
+/* backgrounds */
 const bg = document.getElementById("bg"), bctx = bg.getContext("2d");
 let BW=0,BH=0,bFn=()=>{};
 const pickBg = makeSampler(["triangles","waves","halo","net"]);
-
 function resizeBG(){ BW=bg.width=innerWidth; BH=bg.height=innerHeight }
 addEventListener("resize", resizeBG); resizeBG();
-
 function setBgNext(){
   const kind = pickBg();
   if(kind==="triangles") bFn = bgTriangles();
@@ -183,7 +191,6 @@ function setBgNext(){
   else if(kind==="halo") bFn = bgHalo();
   else bFn = bgNet();
 }
-
 function bgTriangles(){
   const tris = Array.from({length:80},()=>({
     x:Math.random()*BW, y:Math.random()*BH, r:40+Math.random()*140,
@@ -197,7 +204,7 @@ function bgTriangles(){
       if(o.x<-160) o.x=BW+160; if(o.x>BW+160) o.x=-160;
       if(o.y<-160) o.y=BH+160; if(o.y>BH+160) o.y=-160;
       bctx.save(); bctx.translate(o.x,o.y); bctx.rotate(o.a*.2);
-      bctx.globalAlpha=.07;
+      bctx.globalAlpha=.10;  /* brighter than before */
       bctx.fillStyle=o.c; bctx.beginPath();
       bctx.moveTo(-o.r, o.r*.6); bctx.lineTo(0, -o.r); bctx.lineTo(o.r, o.r*.6); bctx.closePath(); bctx.fill();
       bctx.restore();
@@ -209,7 +216,7 @@ function bgWaves(){
     bctx.clearRect(0,0,BW,BH);
     for(let k=0;k<12;k++){
       const y = (k/12)*BH;
-      bctx.strokeStyle = `rgba(45,252,255,${0.04+0.06*Math.sin(t*.001+k)})`;
+      bctx.strokeStyle = `rgba(45,252,255,${0.07+0.06*Math.sin(t*.001+k)})`;
       bctx.lineWidth = 20;
       bctx.beginPath();
       for(let x=0;x<=BW+100;x+=40){
@@ -223,10 +230,10 @@ function bgWaves(){
 function bgHalo(){
   return (t)=>{
     bctx.clearRect(0,0,BW,BH);
-    const cx=BW*0.5, cy=BH*0.45, R=300+Math.sin(t*0.002)*80;
+    const cx=BW*0.5, cy=BH*0.45, R=320+Math.sin(t*0.002)*90;
     const g=bctx.createRadialGradient(cx,cy,0,cx,cy,R);
-    g.addColorStop(0,"rgba(45,252,255,.35)");
-    g.addColorStop(0.5,"rgba(255,45,117,.22)");
+    g.addColorStop(0,"rgba(45,252,255,.38)");
+    g.addColorStop(0.5,"rgba(255,45,117,.28)");
     g.addColorStop(1,"rgba(0,0,0,0)");
     bctx.fillStyle=g; bctx.beginPath(); bctx.arc(cx,cy,R,0,Math.PI*2); bctx.fill();
   }
@@ -234,40 +241,31 @@ function bgHalo(){
 function bgNet(){
   return (t)=>{
     bctx.clearRect(0,0,BW,BH);
-    bctx.globalAlpha=.07;
+    bctx.globalAlpha=.12;
     const s = 60, off = (t*.06)%s;
     bctx.strokeStyle="#2dfcff";
     for(let x=-s+off;x<BW;x+=s){ bctx.beginPath(); bctx.moveTo(x,0); bctx.lineTo(x,BH); bctx.stroke() }
     for(let y=-s+off;y<BH;y+=s){ bctx.beginPath(); bctx.moveTo(0,y); bctx.lineTo(BW,y); bctx.stroke() }
-    bctx.globalAlpha=.06;
+    bctx.globalAlpha=.08;
     bctx.strokeStyle="#ff2d75";
     for(let x=-s*2+off*1.3;x<BW;x+=s*2){ bctx.beginPath(); bctx.moveTo(x,0); bctx.lineTo(x,BH); bctx.stroke() }
   }
 }
-
 function loopBG(ts){ bFn(ts); requestAnimationFrame(loopBG) }
 requestAnimationFrame(loopBG);
 
-/* ===========================================================
-   FX particles and lightning
-=========================================================== */
-// Effects scale and crowd control
-const FX = { scale: 10 };      // was 18
-const MAX_PARTS = 1200;        // hard cap
-function crowd(){              // 0.4 to 1 based on load
-  return Math.min(1, Math.max(.4, 1 - parts.length / MAX_PARTS));
-}
-function scaleCount(n){ return Math.round(n * FX.scale * crowd()); }
+/* FX particles */
+const FX = { scale: 10 };
+const MAX_PARTS = 1000;               /* slightly lower, safer */
+function crowd(){ return Math.min(1, Math.max(.4, 1 - parts.length / MAX_PARTS)) }
+function scaleCount(n){ return Math.round(n * FX.scale * crowd()) }
 
 const c = document.getElementById("fx"), ctx = c.getContext("2d");
 let W,H,parts=[]; function resize(){W=c.width=innerWidth;H=c.height=innerHeight} addEventListener("resize",resize); resize();
-
 const c2 = document.getElementById("fx2"), g2 = c2.getContext("2d");
 function resize2(){c2.width=innerWidth; c2.height=innerHeight; g2.globalCompositeOperation="lighter"} addEventListener("resize",resize2); resize2();
 
-/* capped push and spawners */
 function push(p){ if(parts.length < MAX_PARTS) parts.push(p); return p }
-
 function spawnSpark(x,y,color,count){
   count = scaleCount(count);
   for(let k=0;k<count;k++){
@@ -275,7 +273,6 @@ function spawnSpark(x,y,color,count){
     push({x,y,r:1+Math.random()*2, vx:Math.cos(ang)*spd, vy:Math.sin(ang)*spd, a:1, col:color, type:"s"});
   }
 }
-
 function spawnFire(x,y,count){
   count = scaleCount(count);
   for(let k=0;k<count;k++){
@@ -284,8 +281,7 @@ function spawnFire(x,y,count){
           col:`rgba(${220+Math.random()*35},${90+Math.random()*90},0,1)`, type:"f"});
   }
 }
-
-/* sparser burst confetti around a point */
+/* radial confetti around a point, real explosion look */
 function spawnConfetti(x,y,count){
   count = scaleCount(count);
   for(let k=0;k<count;k++){
@@ -299,22 +295,6 @@ function spawnConfetti(x,y,count){
     });
   }
 }
-
-/* confetti from an edge, shot inward */
-function spawnConfettiEdge(edge,count){
-  count = scaleCount(count);
-  for(let k=0;k<count;k++){
-    let x,y,vx,vy;
-    if(edge==="top"){ x=Math.random()*W; y=-10; vx=(Math.random()*2-1)*3; vy=2+Math.random()*5; }
-    else if(edge==="bottom"){ x=Math.random()*W; y=H+10; vx=(Math.random()*2-1)*3; vy=-(2+Math.random()*5); }
-    else if(edge==="left"){ x=-10; y=Math.random()*H; vx=2+Math.random()*5; vy=(Math.random()*2-1)*3; }
-    else { x=W+10; y=Math.random()*H; vx=-(2+Math.random()*5); vy=(Math.random()*2-1)*3; }
-    push({x,y,r:2+Math.random()*3,w:4+Math.random()*7,h:2+Math.random()*5,
-          rot:Math.random()*Math.PI, vr:(Math.random()-.5)*.6, vx,vy, a:1,
-          col:Math.random()<.5?"#2dfcff":"#ff2d75", type:"confetti"});
-  }
-}
-
 function spawnStreaks(x,y,count){
   count = scaleCount(count);
   for(let k=0;k<count;k++){
@@ -322,9 +302,8 @@ function spawnStreaks(x,y,count){
     push({x,y,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp,len:22+Math.random()*34,a:1,type:"streak"});
   }
 }
-
 function spawnDebris(x,y,count){
-  count = scaleCount(count*.6);
+  count = scaleCount(count*.55);
   for(let k=0;k<count;k++){
     push({x,y,w:8+Math.random()*20,h:6+Math.random()*14,vx:(Math.random()*2-1)*14,vy:-Math.random()*16-6,
           rot:Math.random()*6.28,vr:(Math.random()-.5)*.4,a:1,type:"debris",b:2});
@@ -333,15 +312,18 @@ function spawnDebris(x,y,count){
 function neonPulse(x,y,rad,color){push({x,y,rad:rad,a:1,col:color,type:"neon"})}
 function ring(x,y,w=14){push({x,y,r:w,a:1,col:"rgba(255,255,255,.95)",type:"ring"})}
 
-/* emoji gag particles */
+/* emojis, lighter with a strict cap */
 const emojis = {
   food:["🌭","🍟","🥤","🍔"],
   emoji:["😂","🤯","💥","🚀","😎"],
   critter:["🐐","🦖","🐕","🦙","🐱"]
 };
+const EMOJI_PART_LIMIT = 60;
+function emojiCount(){ let n=0; for(const p of parts) if(p.type==="emoji") n++; return n }
 function spawnEmojiRain(kind){
   const set = emojis[kind] || emojis.emoji;
-  const n = Math.round(30 * crowd()); // halved
+  let n = Math.round(8 * crowd());        /* was 30, then 12, now 8 */
+  n = Math.max(0, Math.min(n, EMOJI_PART_LIMIT - emojiCount()));
   for(let i=0;i<n;i++){
     const side = ["top","left","right","bottom"][Math.floor(Math.random()*4)];
     let x,y,vx,vy;
@@ -354,7 +336,7 @@ function spawnEmojiRain(kind){
   }
 }
 
-/* main draw loop */
+/* draw loop */
 function tick(){
   ctx.clearRect(0,0,W,H);
   for(let p of parts){
@@ -397,7 +379,7 @@ function tick(){
 }
 tick();
 
-/* lightning layer */
+/* lightning */
 const bolts=[];
 function lightning(x,y){
   let sx=Math.random()*innerWidth, sy=-10, tx=x, ty=y;
@@ -419,7 +401,7 @@ function tick2(){
 }
 tick2();
 
-/* simple audio */
+/* audio */
 let AC;
 function audio(){AC=AC||new (window.AudioContext||window.webkitAudioContext)();return AC}
 function sBoom(){try{const ac=audio(); const g=ac.createGain(); g.gain.value=.18; g.connect(ac.destination);
@@ -437,35 +419,30 @@ function sNuke(){try{const ac=audio(); const g=ac.createGain(); g.gain.value=.28
 function sBuzz(){try{const ac=audio();const o=ac.createOscillator(),g=ac.createGain();o.type="square";o.frequency.value=140;g.gain.value=.12;o.connect(g);g.connect(ac.destination);o.start();g.gain.exponentialRampToValueAtTime(0.0001,ac.currentTime+.24);o.stop(ac.currentTime+.24)}catch(_){}} 
 function sPing(){try{const ac=audio();const o=ac.createOscillator(),g=ac.createGain();o.type="triangle";o.frequency.setValueAtTime(800,ac.currentTime);o.frequency.exponentialRampToValueAtTime(1600,ac.currentTime+.12);g.gain.value=.08;o.connect(g);g.connect(ac.destination);o.start();g.gain.exponentialRampToValueAtTime(0.0001,ac.currentTime+.25);o.stop(ac.currentTime+.25)}catch(_){}}
 
-/* ===========================================================
-   Big effects and transitions
-=========================================================== */
+/* effects and transitions */
 function effectNuke(x,y){ flash(1); camShake(700,28); sNuke();
   neonPulse(x,y,120, "rgba(45,252,255,.55)");
   neonPulse(x,y,260, "rgba(255,45,117,.40)");
   ring(x,y,40); ring(x,y,120);
-  spawnFire(x,y,240); spawnSpark(x,y,"rgba(255,255,255,.98)",140); spawnStreaks(x,y,100); spawnDebris(x,y,60);
+  spawnFire(x,y,200); spawnSpark(x,y,"rgba(255,255,255,.98)",120); spawnStreaks(x,y,90); spawnDebris(x,y,50);
 }
 function effectNeonStorm(x,y){ flash(.7); camShake(520,22); sBoom();
   lightning(x,y); lightning(x+120,y-40);
-  spawnSpark(x,y,"rgba(45,252,255,.98)",140); spawnSpark(x,y,"rgba(255,45,117,.98)",140);
+  spawnSpark(x,y,"rgba(45,252,255,.98)",120); spawnSpark(x,y,"rgba(255,45,117,.98)",120);
   ring(x,y,28); neonPulse(x,y,220,"rgba(45,252,255,.35)");
 }
-/* sparse, chaotic confetti from 1 to 3 random edges */
-function effectMegaConfetti(x,y){
+/* circular confetti burst, not a wall */
+function effectConfettiBurst(x,y){
   camShake(360,14); sPing(); ring(x,y,18);
-  const edges=["top","left","right","bottom"];
-  shuffle(edges);
-  const howMany = 1 + Math.floor(Math.random()*3);
-  for(let e=0;e<howMany;e++) spawnConfettiEdge(edges[e], 24);
+  spawnConfetti(x,y,28);
+  spawnSpark(x,y,"rgba(255,255,255,.95)",40);
 }
-function effectShockwave(x,y){ flash(.6); camShake(480,20); sBoom(); ring(x,y,36); spawnFire(x,y,180) }
-function effectStreakCascade(x,y){ camShake(360,16); sPing(); spawnStreaks(x,y,140); ring(x,y,18) }
-function effectDebrisBlast(x,y){ camShake(520,22); sBoom(); spawnDebris(x,y,120); spawnSpark(x,y,"rgba(255,255,255,.95)",80); ring(x,y,26) }
-const EFFECTS=[effectNuke,effectNeonStorm,effectMegaConfetti,effectShockwave,effectStreakCascade,effectDebrisBlast];
+function effectShockwave(x,y){ flash(.6); camShake(480,20); sBoom(); ring(x,y,36); spawnFire(x,y,140) }
+function effectStreakCascade(x,y){ camShake(360,16); sPing(); spawnStreaks(x,y,100); ring(x,y,18) }
+function effectDebrisBlast(x,y){ camShake(520,22); sBoom(); spawnDebris(x,y,100); spawnSpark(x,y,"rgba(255,255,255,.95)",70); ring(x,y,26) }
+const EFFECTS=[effectNuke,effectNeonStorm,effectConfettiBurst,effectShockwave,effectStreakCascade,effectDebrisBlast];
 const pickEffect = makeSampler(EFFECTS.map((_,i)=>i));
 
-/* transitions */
 const pickTransition = makeSampler(["slice","ripple","blur"]);
 function transitionNext(type, done){
   const ov = document.getElementById("overlay"); ov.innerHTML = "";
@@ -481,13 +458,11 @@ function transitionNext(type, done){
   }
 }
 
-/* gag chooser, never at the same time as big FX */
+/* either FX or emoji gag, not both */
 const pickGag = makeSampler(["food","emoji","critter"]);
 const pickCelebrate = makeSampler(["fx","gag","fx","fx","gag"]);
 
-/* ===========================================================
-   Game flow
-=========================================================== */
+/* flow */
 function setTimer(sec){limit=sec; left=sec; clearInterval(timer); fill.style.width="100%"; timer=setInterval(()=>{left=Math.max(0,left-1); fill.style.width=Math.round(100*left/limit)+"%"; if(left<=0){clearInterval(timer); reveal("")}},1000)}
 
 async function load(){
@@ -497,7 +472,6 @@ async function load(){
     i=0; score=0; scoreEl.textContent=score; setBgNext(); next();
   }catch(e){ qEl.textContent="Load failed, "+e }
 }
-
 function next(){
   if(i>0) setBgNext();
   if(i>=Q.length) return finish();
@@ -510,7 +484,6 @@ function next(){
     b.onclick=()=>reveal(L,q,b); optsEl.appendChild(b);
   });
 }
-
 function reveal(L,q,btn){
   if(answered) return;
   const correct=L===q.correct;
@@ -521,11 +494,8 @@ function reveal(L,q,btn){
 
     let x=innerWidth*.5,y=150; if(btn){const r=btn.getBoundingClientRect(); x=r.left+r.width*.5; y=r.top+r.height*.5}
     const mode = pickCelebrate();
-    if(mode==="fx"){
-      const fxIndex = pickEffect(); EFFECTS[fxIndex](x,y);
-    }else{
-      spawnEmojiRain(pickGag());
-    }
+    if(mode==="fx"){ const fxIndex = pickEffect(); EFFECTS[fxIndex](x,y); }
+    else { spawnEmojiRain(pickGag()); }
     transitionNext(pickTransition(), next);
   }else{
     if(!tried.has(L)) tried.add(L);
@@ -534,7 +504,6 @@ function reveal(L,q,btn){
     sBuzz();
   }
 }
-
 function finish(){ clearInterval(timer); setLocked(true); finalEl.textContent=score; document.getElementById("done").style.display="block"; renderLB() }
 
 /* local leaderboard */
@@ -547,7 +516,7 @@ function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":
 document.getElementById("saveScore").onclick=()=>{const n=document.getElementById("name").value.trim()||"Player"; addLB(n,score)};
 document.getElementById("clearLB").onclick=()=>{localStorage.removeItem(LB_KEY); renderLB()};
 
-/* kick off */
+/* start */
 load();
 </script>
 </body>
