@@ -41,17 +41,66 @@
       2px 2px 0 #000, -2px 2px 0 #000, 2px -2px 0 #000, -2px -2px 0 #000;
   }
 
-  h1{margin:0 0 12px; font-size:48px; letter-spacing:.5px; display:inline-block}
+  h1{margin:0 0 12px; font-size:48px; letter-spacing:.5px; display:inline-block; position:relative}
   #title{filter:drop-shadow(0 0 16px rgba(45,252,255,.6)) drop-shadow(0 0 10px rgba(255,45,117,.35))}
-  .tPulse{animation:glowPulse 2s ease} .tTilt{animation:tilt .6s ease}
-  .tHue{animation:hue 3s ease} .tFlick{animation:flicker 1s linear}
+
+  /* existing micro effects, still used by the scheduler */
+  .tPulse{animation:glowPulse 2s ease infinite}
+  .tTilt{animation:tilt 1.8s ease infinite}
+  .tHue{animation:hue 14s linear infinite}
+  .tFade{animation:fade 12s ease-in-out infinite}
+  .tFlick{animation:flicker 1.2s linear infinite}
+
   @keyframes glowPulse{
     0%,100%{filter:drop-shadow(0 0 10px rgba(45,252,255,.40)) drop-shadow(0 0 6px rgba(255,45,117,.25))}
     50%{filter:drop-shadow(0 0 34px rgba(45,252,255,.90)) drop-shadow(0 0 20px rgba(255,45,117,.55))}
   }
-  @keyframes tilt{0%{transform:rotate(0)}50%{transform:rotate(.9deg)}100%{transform:rotate(0)}}
-  @keyframes hue{0%{filter:hue-rotate(0)}100%{filter:hue-rotate(28deg)}}
+  @keyframes tilt{0%{transform:rotate(0)}50%{transform:rotate(1deg)}100%{transform:rotate(0)}}
+  @keyframes hue{0%{filter:hue-rotate(0)}100%{filter:hue-rotate(360deg)}}
+  @keyframes fade{0%,100%{opacity:1}50%{opacity:.75}}
   @keyframes flicker{0%,19%,21%,23%,25%,54%,56%,100%{opacity:1}20%,24%,55%{opacity:.6}}
+
+  /* glitch effect */
+  .tGlitch{
+    text-shadow:
+      1px 0 rgba(255,0,255,.9),
+      -1px 0 rgba(0,255,255,.9),
+      0 0 18px rgba(45,252,255,.5),
+      0 0 10px rgba(255,45,117,.35);
+    animation:glitchShift .9s steps(2,end) infinite;
+  }
+  @keyframes glitchShift{
+    0%{transform:translate(0,0)}
+    20%{transform:translate(1px,-1px)}
+    40%{transform:translate(-1px,1px)}
+    60%{transform:translate(1px,0)}
+    80%{transform:translate(-1px,0)}
+    100%{transform:translate(0,0)}
+  }
+
+  /* blocky pixel grid overlay to fake pixelation */
+  .tBlocky{ filter:contrast(120%) saturate(115%) }
+  .tBlocky::after{
+    content:""; position:absolute; inset:-6px; pointer-events:none;
+    background:
+      repeating-linear-gradient(0deg, rgba(255,255,255,.06), rgba(255,255,255,.06) 2px, transparent 2px, transparent 4px),
+      repeating-linear-gradient(90deg, rgba(255,255,255,.06), rgba(255,255,255,.06) 2px, transparent 2px, transparent 4px);
+    mix-blend-mode:screen; opacity:.25;
+    animation:blocky 1s steps(2,end) infinite;
+  }
+  @keyframes blocky{0%,100%{transform:translate(0,0)}50%{transform:translate(1px,0)}}
+
+  /* neon inner pulse by stacking shadows tighter */
+  .tInnerNeon{
+    text-shadow:
+      0 0 2px rgba(255,255,255,1),
+      0 0 6px rgba(45,252,255,.9),
+      0 0 10px rgba(45,252,255,.7),
+      0 0 16px rgba(255,45,117,.55),
+      0 0 22px rgba(255,45,117,.35);
+    animation:innerNeon 6s ease-in-out infinite;
+  }
+  @keyframes innerNeon{0%,100%{filter:brightness(1)}50%{filter:brightness(1.2)}}
 
   #hud{display:flex;align-items:center;gap:10px;margin:8px 0 14px;opacity:.98}
   #bar{position:relative;height:14px;flex:1;background:#00000070;border-radius:999px;overflow:hidden}
@@ -131,7 +180,6 @@
           <div style="margin:6px 0 10px">
             <input id="name" type="text" placeholder="Your name" maxlength="24">
             <button class="btn" id="saveScore">Save score</button>
-            <button class="btn" id="clearLB">Clear leaderboard</button>
           </div>
           <table id="lb"><thead><tr><th>#</th><th>Name</th><th>Score</th><th>Date</th></tr></thead><tbody></tbody></table>
           <small>Leaderboard is shared from the repo</small>
@@ -160,7 +208,7 @@ function flash(strength=1){flashEl.style.opacity=String(Math.min(1,strength));fl
 function camShake(ms=450,amp=15){const t0=performance.now(), A=amp; function f(t){const k=Math.max(0,1-(t-t0)/ms); const x=(Math.random()*2-1)*A*k, y=(Math.random()*2-1)*A*k, r=(Math.random()*2-1)*0.9*k; cam.style.transform=`translate(${x}px,${y}px) rotate(${r}deg)`; if(k>0) requestAnimationFrame(f); else cam.style.transform=""} requestAnimationFrame(f)}
 function makeSampler(arr){let i=0, bag=arr.slice(); return function(){ if(i>=bag.length){bag=bag.slice().sort(()=>Math.random()-.5); i=0} return bag[i++] }}
 
-/* CSV parser to objects with header keys */
+/* CSV parser */
 function parseCSV(txt){
   const rows=[];let row=[],cell="",inQ=false;
   for(let i=0;i<txt.length;i++){
@@ -178,9 +226,22 @@ function parseCSV(txt){
   });
 }
 
-/* title life */
-function randomTitleNudge(){const cls=["tPulse","tTilt","tHue","tFlick"][Math.floor(Math.random()*4)]; title.classList.add(cls); setTimeout(()=>title.classList.remove(cls),1200)}
-setInterval(()=>{ if(Math.random()<.8) randomTitleNudge() }, 2800);
+/* title effects scheduler, each effect max 20s */
+const TITLE_CLASSES = ["tPulse","tTilt","tHue","tFade","tFlick","tGlitch","tBlocky","tInnerNeon"];
+let currentTitleClass = null, titleTimer = null;
+function applyTitleClass(cls){
+  if(currentTitleClass){ title.classList.remove(currentTitleClass) }
+  currentTitleClass = cls;
+  title.classList.add(cls);
+}
+function scheduleNextTitleEffect(){
+  const next = TITLE_CLASSES[Math.floor(Math.random()*TITLE_CLASSES.length)];
+  applyTitleClass(next);
+  const duration = 6000 + Math.random()*14000; // 6s to 20s
+  clearTimeout(titleTimer);
+  titleTimer = setTimeout(scheduleNextTitleEffect, duration);
+}
+scheduleNextTitleEffect();
 
 /* backgrounds */
 const bg = document.getElementById("bg"), bctx = bg.getContext("2d");
@@ -510,12 +571,12 @@ function reveal(L,q,btn){
 }
 function finish(){ clearInterval(timer); setLocked(true); finalEl.textContent=score; document.getElementById("done").style.display="block"; renderLB() }
 
-/* tiny util for LB */
+/* leaderboard helpers */
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
 function toB64(s){ return btoa(unescape(encodeURIComponent(s))) }
 function escapeCsv(s){ return `"${String(s).replace(/"/g,'""')}"` }
 
-/* remote leaderboard in repo */
+/* remote leaderboard */
 async function getRemoteLB(){
   try{
     const txt = await fetch(LB_CSV_URL, {cache:"no-store"}).then(r => r.ok ? r.text() : "name,score,ts\n");
@@ -563,11 +624,10 @@ document.getElementById("saveScore").onclick = async () => {
   const n = document.getElementById("name").value.trim() || "Player";
   try{ await addLB(n, score) }catch(e){ alert("Save failed, " + e.message) }
 };
-document.getElementById("clearLB").onclick = async () => {
-  try{ await saveRemoteLB([]); await renderLB() }catch(e){ alert("Clear failed, " + e.message) }
-};
 
 /* start */
+setBgNext();
+scheduleNextTitleEffect();
 load();
 </script>
 </body>
