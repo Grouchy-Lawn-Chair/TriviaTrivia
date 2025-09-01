@@ -3,27 +3,36 @@
 <title>Unhinged Trivia</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
+<!-- libs for backgrounds and particles -->
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+<script defer src="https://unpkg.com/vanta/dist/vanta.fog.min.js"></script>
+<script defer src="https://unpkg.com/vanta/dist/vanta.waves.min.js"></script>
+<script defer src="https://unpkg.com/vanta/dist/vanta.halo.min.js"></script>
+<script defer src="https://unpkg.com/vanta/dist/vanta.net.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/tsparticles@3/tsparticles.bundle.min.js"></script>
+
 <style>
   :root{ --bg1:#060917; --bg2:#10061a; --fg:#fff; --accent:#2dfcff; --hot:#ff2d75; }
   *{box-sizing:border-box} html,body{height:100%}
   body{
     margin:0; color:var(--fg);
     font:16px/1.45 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-    background:
-      radial-gradient(1300px 640px at 20% -10%, rgba(45,252,255,.12), transparent 60%),
-      radial-gradient(1000px 800px at 120% 20%, rgba(255,45,117,.10), transparent 60%),
-      linear-gradient(135deg,var(--bg1),var(--bg2));
-    background-size:140% 140%; animation:drift 26s linear infinite; overflow-x:hidden;
+    background:linear-gradient(135deg,var(--bg1),var(--bg2));
+    overflow-x:hidden;
   }
-  @keyframes drift{0%{background-position:0% 0%}50%{background-position:100% 100%}100%{background-position:0% 0%}}
 
-  .fx::before,.fx::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:0}
-  .fx::before{background:repeating-linear-gradient(transparent,transparent 2px,rgba(255,255,255,.02) 3px);mix-blend-mode:overlay}
-  .fx::after{box-shadow:inset 0 0 160px rgba(0,0,0,.65)}
-  #cam{position:relative;z-index:1;transform-origin:50% 35%}
-  #wrap{max-width:1100px;margin:34px auto;padding:16px}
-  h1{margin:0 0 12px;font-size:44px;letter-spacing:.5px;position:relative;display:inline-block;text-shadow:0 0 18px rgba(45,252,255,.25),0 0 8px rgba(255,45,117,.18)}
-  .tPulse{animation:glowPulse 2s ease} .tTilt{animation:tilt .6s ease} .tHue{animation:hue 3s ease} .tFlicker{animation:flicker 1s linear}
+  /* layers */
+  #vanta {position:fixed; inset:0; z-index:0}
+  #tsparticles {position:fixed; inset:0; z-index:1; pointer-events:none}
+  #flash {position:fixed; inset:0; background:#fff; opacity:0; z-index:4; pointer-events:none}
+  #overlay {position:fixed; inset:0; z-index:5; pointer-events:none}
+
+  /* app */
+  #cam{position:relative; z-index:3; transform-origin:50% 35%}
+  #wrap{max-width:1100px; margin:34px auto; padding:16px}
+  h1{margin:0 0 12px; font-size:44px; letter-spacing:.5px; position:relative; display:inline-block; text-shadow:0 0 18px rgba(45,252,255,.25),0 0 8px rgba(255,45,117,.18)}
+  .tPulse{animation:glowPulse 2s ease} .tTilt{animation:tilt .6s ease} .tHue{animation:hue 3s ease} .tFlick{animation:flicker 1s linear}
   @keyframes glowPulse{0%,100%{text-shadow:0 0 10px rgba(45,252,255,.15)}50%{text-shadow:0 0 36px rgba(45,252,255,.55)}}
   @keyframes tilt{0%{transform:rotate(0)}50%{transform:rotate(.7deg)}100%{transform:rotate(0)}}
   @keyframes hue{0%{filter:hue-rotate(0)}100%{filter:hue-rotate(24deg)}}
@@ -33,6 +42,7 @@
   #bar{position:relative;height:14px;flex:1;background:#ffffff25;border-radius:999px;overflow:hidden}
   #fill{position:absolute;inset:0;width:100%;background:linear-gradient(90deg,var(--hot),var(--accent))}
   #q{font-size:30px;margin:18px 0 12px}
+
   .opt{display:block;width:100%;text-align:left;margin:10px 0;padding:16px 18px;border-radius:16px;border:1px solid #ffffff3a;color:var(--fg);background:#ffffff16;cursor:pointer;font-weight:800;transition:transform .06s ease,background .15s ease,border-color .15s ease}
   .opt:hover{transform:translateY(-1px);background:#ffffff1b}
   .opt.ok{background:#134323;border-color:#2fff8f;box-shadow:0 0 36px rgba(46,255,143,.35)}
@@ -52,23 +62,26 @@
     90%{transform:translate(-4px, 3px) rotate(-.2deg)}
   }
 
+  /* transition overlay bits */
+  .slice{position:absolute; top:0; left:-30%; width:30%; height:100%; background:linear-gradient(135deg,rgba(45,252,255,.9),rgba(255,45,117,.9)); transform:skewX(-20deg); animation:slice 420ms ease forwards}
+  @keyframes slice{0%{left:-30%}100%{left:130%}}
+  .ripple{position:absolute; border-radius:999px; background:radial-gradient(circle, rgba(255,255,255,.75) 0%, rgba(255,255,255,0) 60%); width:20px; height:20px; top:50%; left:50%; transform:translate(-50%,-50%); animation:ripple 420ms ease forwards}
+  @keyframes ripple{0%{opacity:.9; transform:translate(-50%,-50%) scale(1)}100%{opacity:0; transform:translate(-50%,-50%) scale(40)}}
+
+  /* table and buttons */
   #done{display:none;margin-top:22px}
   table{width:100%;border-collapse:collapse;margin-top:8px}
   th,td{padding:8px 10px;border-bottom:1px solid #ffffff22;text-align:left}
-  input[type="text"]{background:#ffffff14;border:1px solid #ffffff33;color:var(--fg);padding:10px;border-radius:10px}
+  input[type=text]{background:#ffffff14;border:1px solid #ffffff33;color:var(--fg);padding:10px;border-radius:10px}
   .btn{display:inline-block;margin:8px 6px 0 0;padding:10px 12px;border-radius:10px;border:1px solid #ffffff38;background:#ffffff18;color:var(--fg);cursor:pointer}
   .btn:hover{background:#ffffff22}
-  small{opacity:.75}
-
-  canvas{position:fixed;inset:0;pointer-events:none;z-index:0}
-  #fx2{position:fixed;inset:0;pointer-events:none;z-index:0}
-  #flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:3}
 </style>
 
-<body class="fx">
+<body>
+  <div id="vanta"></div>
+  <div id="tsparticles"></div>
   <div id="flash"></div>
-  <canvas id="fx"></canvas>
-  <canvas id="fx2"></canvas>
+  <div id="overlay"></div>
 
   <div id="cam">
     <div id="wrap">
@@ -85,200 +98,40 @@
       <div id="done">
         <h2>Done</h2>
         <p>Total <b id="final">0</b></p>
-        <div id="lbWrap">
-          <div style="margin:6px 0 10px">
-            <input id="name" type="text" placeholder="Your name" maxlength="24">
-            <button class="btn" id="saveScore">Save score</button>
-            <button class="btn" id="clearLB">Clear leaderboard</button>
-          </div>
-          <table id="lb"><thead><tr><th>#</th><th>Name</th><th>Score</th><th>Date</th></tr></thead><tbody></tbody></table>
-          <small>Leaderboard is stored locally in this browser</small>
+        <div>
+          <input id="name" type="text" placeholder="Your name" maxlength="24">
+          <button class="btn" id="saveScore">Save score</button>
+          <button class="btn" id="clearLB">Clear leaderboard</button>
         </div>
+        <table id="lb"><thead><tr><th>#</th><th>Name</th><th>Score</th><th>Date</th></tr></thead><tbody></tbody></table>
+        <small>Leaderboard is stored locally in this browser</small>
       </div>
     </div>
   </div>
 
 <script>
-/* tuning */
-const FX = { scale: 18, shake: 1.6 }; // scale makes everything bigger, shake controls camera strength
+/* knobs */
+const FX = { scale: 18, shake: 1.6 };
 
 /* state */
 const CSV_URL = "https://raw.githubusercontent.com/Grouchy-Lawn-Chair/TriviaTrivia/main/questions.csv";
-const $  = s => document.querySelector(s);
-const cam = $("#cam"), title = $("#title"), wrap = $("#wrap"), qEl = $("#q"), optsEl = $("#opts");
-const idxEl = $("#idx"), scoreEl = $("#score"), finalEl = $("#final");
-const fill = $("#fill"), flashEl = $("#flash");
+const $ = s => document.querySelector(s);
+const cam = $("#cam"), title = $("#title"), qEl = $("#q"), optsEl = $("#opts"), overlay = $("#overlay");
+const idxEl = $("#idx"), scoreEl = $("#score"), finalEl = $("#final"), fill = $("#fill"), flashEl = $("#flash");
 let Q = [], i = 0, score = 0, tried = new Set(), answered = false, limit = 20, left = 0, timer = 0;
 
-/* canvases */
-const c = document.getElementById("fx"), ctx = c.getContext("2d");
-let W,H,parts=[]; function resize(){W=c.width=innerWidth;H=c.height=innerHeight} addEventListener("resize",resize); resize();
-
-const c2 = document.getElementById("fx2"), g2 = c2.getContext("2d");
-function resize2(){c2.width=innerWidth; c2.height=innerHeight; g2.globalCompositeOperation="lighter"} addEventListener("resize",resize2); resize2();
-
-/* particles */
-function push(p){parts.push(p);return p}
-function spawnSpark(x,y,color,count){count=Math.round(count*FX.scale);for(let k=0;k<count;k++)push({x,y,r:1+Math.random()*2,vx:(Math.random()*2-1)*9,vy:-Math.random()*9-4,a:1,col:color,type:"s"})}
-function spawnFire(x,y,count){count=Math.round(count*FX.scale);for(let k=0;k<count;k++)push({x,y,r:2+Math.random()*3,vx:(Math.random()*2-1)*6,vy:-Math.random()*6-3,a:1,col:`rgba(${220+Math.random()*35},${90+Math.random()*90},0,1)`,type:"f"})}
-function spawnConfetti(x,y,count){count=Math.round(count*FX.scale);for(let k=0;k<count;k++)push({x,y,r:2+Math.random()*3,w:6+Math.random()*10,h:3+Math.random()*6,rot:Math.random()*Math.PI,vr:(Math.random()-.5)*.5,vx:(Math.random()*2-1)*7,vy:-Math.random()*9-4,a:1,col:Math.random()<.5?"#2dfcff":"#ff2d75",type:"confetti"})}
-function spawnStreaks(x,y,count){count=Math.round(count*FX.scale);for(let k=0;k<count;k++){const ang=Math.random()*Math.PI*2, sp=10+Math.random()*14;push({x,y,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp,len:22+Math.random()*34,a:1,type:"streak"})}}
-function spawnDebris(x,y,count){count=Math.round(count*FX.scale*.6);for(let k=0;k<count;k++){push({x,y,w:8+Math.random()*20,h:6+Math.random()*14,vx:(Math.random()*2-1)*14,vy:-Math.random()*16-6,rot:Math.random()*6.28,vr:(Math.random()-.5)*.4,a:1,type:"debris",b:3})}}
-function neonPulse(x,y,rad,color){push({x,y,rad:rad,a:1,col:color,type:"neon"})}
-function ring(x,y,w=14){push({x,y,r:w,a:1,col:"rgba(255,255,255,.95)",type:"ring"})}
-
-/* draw loop */
-function tick(){
-  ctx.clearRect(0,0,W,H);
-  for(let p of parts){
-    if(p.type==="ring"){
-      ctx.beginPath(); ctx.arc(p.x,p.y,Math.max(0,p.r),0,Math.PI*2);
-      ctx.strokeStyle=p.col; ctx.globalAlpha=p.a; ctx.lineWidth=4; ctx.stroke();
-      p.r+=20; p.a*=.92;
-    }else if(p.type==="neon"){
-      const grd=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.rad);
-      grd.addColorStop(0,p.col); grd.addColorStop(1,"rgba(0,0,0,0)");
-      ctx.globalAlpha=p.a; ctx.fillStyle=grd; ctx.beginPath(); ctx.arc(p.x,p.y,p.rad,0,Math.PI*2); ctx.fill();
-      p.rad+=30; p.a*=.90;
-    }else if(p.type==="confetti"){
-      p.x+=p.vx; p.y+=p.vy; p.vy+=.22; p.rot+=p.vr; p.a*=.985;
-      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot); ctx.globalAlpha=p.a; ctx.fillStyle=p.col;
-      ctx.fillRect(-p.w*.5,-p.h*.5,p.w,p.h); ctx.restore();
-    }else if(p.type==="streak"){
-      p.x+=p.vx; p.y+=p.vy; p.a*=.95;
-      ctx.globalAlpha=p.a; ctx.strokeStyle="rgba(255,255,255,.95)"; ctx.lineWidth=3;
-      ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(p.x-p.vx*1.2,p.y-p.vy*1.2); ctx.stroke();
-    }else if(p.type==="debris"){
-      p.x+=p.vx; p.y+=p.vy; p.vy+=.7; p.rot+=p.vr; p.a*=.993;
-      // bounce off edges a few times
-      if(p.b>0){
-        if(p.x<0||p.x>W){p.vx*=-.7; p.x=Math.max(0,Math.min(W,p.x)); p.b--;}
-        if(p.y>H){p.vy*=-.6; p.y=H; p.b--;}
-      }
-      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot); ctx.globalAlpha=p.a; ctx.fillStyle="rgba(255,255,255,.9)";
-      ctx.fillRect(-p.w*.5,-p.h*.5,p.w,p.h); ctx.restore();
-    }else{
-      // sparks fire
-      p.x+=p.vx; p.y+=p.vy; p.vy+=p.type==="f"?0.22:0.12; p.a*=.97; p.r*=.987;
-      ctx.globalAlpha=Math.max(0,p.a); ctx.fillStyle=p.col; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
-    }
-  }
-  parts=parts.filter(p=>p.a>.035 && (p.r||0)<1500 && p.y<H+60);
-  requestAnimationFrame(tick);
-}
-tick();
-
-/* lightning layer */
-const bolts=[];
-function lightning(x,y){
-  let sx=Math.random()*innerWidth, sy=-10, tx=x, ty=y;
-  let p={pts:[], a:1}; bolts.push(p); let cx=sx, cy=sy;
-  const steps=22;
-  for(let i=0;i<steps;i++){ const nx=cx+(tx-cx)/2+(Math.random()*160-80); const ny=cy+(ty-cy)/2+(Math.random()*80); p.pts.push([cx,cy,nx,ny]); cx=nx; cy=ny; }
-}
-function tick2(){
-  g2.clearRect(0,0,innerWidth,innerHeight);
-  for(const b of bolts){
-    b.a*=.88; g2.globalAlpha=b.a;
-    g2.lineWidth=7; g2.strokeStyle="rgba(255,255,255,1)"; g2.beginPath();
-    b.pts.forEach(seg=>{g2.moveTo(seg[0],seg[1]); g2.lineTo(seg[2],seg[3])}); g2.stroke();
-    g2.lineWidth=3; g2.strokeStyle="rgba(45,252,255,1)"; g2.beginPath();
-    b.pts.forEach(seg=>{g2.moveTo(seg[0],seg[1]); g2.lineTo(seg[2],seg[3])}); g2.stroke();
-  }
-  for(let i=bolts.length-1;i>=0;i--) if(bolts[i].a<.05) bolts.splice(i,1);
-  requestAnimationFrame(tick2);
-}
-tick2();
-
-/* flash and camera */
-function flash(strength=1){flashEl.style.opacity=String(Math.min(1,strength));flashEl.style.transition="opacity .25s";requestAnimationFrame(()=>{flashEl.style.opacity="0"})}
-function camShake(ms=450,amp=15){const t0=performance.now(), A=amp*FX.shake; function f(t){const k=Math.max(0,1-(t-t0)/ms); const x=(Math.random()*2-1)*A*k, y=(Math.random()*2-1)*A*k, r=(Math.random()*2-1)*0.9*k; cam.style.transform=`translate(${x}px,${y}px) rotate(${r}deg)`; if(k>0) requestAnimationFrame(f); else cam.style.transform=""} requestAnimationFrame(f)}
-function punch(){cam.classList.remove("punch"); void cam.offsetWidth; cam.classList.add("punch")}
-
-/* title micro animations */
-function randomTitleNudge(){const cls=["tPulse","tTilt","tHue","tFlicker"][Math.floor(Math.random()*4)]; title.classList.add(cls); setTimeout(()=>title.classList.remove(cls),1200)}
+/* title tiny life */
+function randomTitleNudge(){ const cls=["tPulse","tTilt","tHue","tFlick"][Math.floor(Math.random()*4)]; title.classList.add(cls); setTimeout(()=>title.classList.remove(cls),1200) }
 setInterval(()=>{ if(Math.random()<.8) randomTitleNudge() }, 3500);
+
+/* utilities */
+function shuffle(a){for(let j=a.length-1;j>0;j--){const k=Math.floor(Math.random()*(j+1));[a[j],a[k]]=[a[k],a[j]]}return a}
+function makeSampler(n){ let bag = shuffle([...Array(n).keys()]); let idx = 0; return { next(){ if(idx>=bag.length){ bag = shuffle(bag); idx = 0 } return bag[idx++] } } }
+function setLocked(on){$("#wrap").classList.toggle("locked",on); answered = on}
+function flash(strength=1){ flashEl.style.opacity=String(Math.min(1,strength)); flashEl.style.transition="opacity .25s"; requestAnimationFrame(()=>{ flashEl.style.opacity="0" }) }
+function camShake(ms=450,amp=15){ const t0=performance.now(), A=amp*FX.shake; function f(t){ const k=Math.max(0,1-(t-t0)/ms); const x=(Math.random()*2-1)*A*k, y=(Math.random()*2-1)*A*k, r=(Math.random()*2-1)*0.9*k; cam.style.transform=`translate(${x}px,${y}px) rotate(${r}deg)`; if(k>0) requestAnimationFrame(f); else cam.style.transform="" } requestAnimationFrame(f)}
 
 /* audio */
 let AC;
-function audio(){AC=AC||new (window.AudioContext||window.webkitAudioContext)();return AC}
-function sBoom(){try{const ac=audio(); const g=ac.createGain(); g.gain.value=.18; g.connect(ac.destination);
-  const o=ac.createOscillator(); o.type="sine"; o.frequency.setValueAtTime(120,ac.currentTime); o.frequency.exponentialRampToValueAtTime(40,ac.currentTime+.35); o.connect(g);
-  const n=ac.createBufferSource(); const b=ac.createBuffer(1,ac.sampleRate*.4,ac.sampleRate); const ch=b.getChannelData(0);
-  for(let i=0;i<ch.length;i++){ ch[i]=(Math.random()*2-1)*Math.pow(1-i/ch.length,1.6) } n.buffer=b; n.connect(g);
-  g.gain.setValueAtTime(.18,ac.currentTime); g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+.6);
-  o.start(); n.start(); o.stop(ac.currentTime+.6);}catch(_){}} 
-function sNuke(){try{const ac=audio(); const g=ac.createGain(); g.gain.value=.28; g.connect(ac.destination);
-  const o=ac.createOscillator(); o.type="sine"; o.frequency.setValueAtTime(90,ac.currentTime); o.frequency.exponentialRampToValueAtTime(20,ac.currentTime+.8); o.connect(g);
-  const n=ac.createBufferSource(); const b=ac.createBuffer(1,ac.sampleRate*1.2,ac.sampleRate); const ch=b.getChannelData(0);
-  for(let i=0;i<ch.length;i++){ const t=i/ch.length; ch[i]=(Math.random()*2-1)*(1-t)*.9 } n.buffer=b; n.connect(g);
-  g.gain.setValueAtTime(.28,ac.currentTime); g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+1.2);
-  o.start(); n.start(); o.stop(ac.currentTime+1.2);}catch(_){}} 
-function sBuzz(){try{const ac=audio();const o=ac.createOscillator(),g=ac.createGain();o.type="square";o.frequency.value=140;g.gain.value=.12;o.connect(g);g.connect(ac.destination);o.start();g.gain.exponentialRampToValueAtTime(0.0001,ac.currentTime+.24);o.stop(ac.currentTime+.24)}catch(_){}} 
-function sPing(){try{const ac=audio();const o=ac.createOscillator(),g=ac.createGain();o.type="triangle";o.frequency.setValueAtTime(800,ac.currentTime);o.frequency.exponentialRampToValueAtTime(1600,ac.currentTime+.12);g.gain.value=.08;o.connect(g);g.connect(ac.destination);o.start();g.gain.exponentialRampToValueAtTime(0.0001,ac.currentTime+.25);o.stop(ac.currentTime+.25)}catch(_){}}
-
-/* CSV parsing */
-function parseCSV(txt){const rows=[];let row=[],cell="",inQ=false;for(let i=0;i<txt.length;i++){const ch=txt[i],nx=txt[i+1];if(inQ){if(ch=='"'&&nx=='"'){cell+='"';i++}else if(ch=='"'){inQ=false}else cell+=ch}else{if(ch=='"'){inQ=true}else if(ch===','){row.push(cell);cell=""}else if(ch==='\r'){}else if(ch==='\n'){row.push(cell);rows.push(row);row=[];cell=""}else cell+=ch}} if(cell.length||row.length){row.push(cell);rows.push(row)} if(!rows.length) return []; const head=rows.shift(); return rows.filter(r=>r.length&&r.some(x=>x&&x.trim().length)).map((r,idx)=>{const o={}; head.forEach((h,ii)=>o[h]=r[ii]||""); o.qid=o.qid||idx+1; o.timeLimit=+o.timeLimit||20; return o})}
-function shuffle(a){for(let j=a.length-1;j>0;j--){const k=Math.floor(Math.random()*(j+1));[a[j],a[k]]=[a[k],a[j]]}return a}
-function setTimer(sec){limit=sec; left=sec; clearInterval(timer); fill.style.width="100%"; timer=setInterval(()=>{left=Math.max(0,left-1); fill.style.width=Math.round(100*left/limit)+"%"; if(left<=0){clearInterval(timer); reveal("")}},1000)}
-function setLocked(on){wrap.classList.toggle("locked",on); answered=on}
-
-/* flow */
-async function load(){try{const t=await fetch(CSV_URL,{cache:"no-store"}).then(r=>r.text()); Q=shuffle(parseCSV(t)); if(!Q.length) throw Error("no questions"); i=0; score=0; scoreEl.textContent=score; next()}catch(e){ qEl.textContent="Load failed, "+e }}
-function next(){ if(i>=Q.length) return finish(); const q=Q[i++]; idxEl.textContent=i+"/"+Q.length; qEl.textContent=q.question; tried.clear(); setLocked(false); setTimer(q.timeLimit); optsEl.innerHTML=""; ["A","B","C","D"].forEach(L=>{const txt=q["option"+L]; if(!txt) return; const b=document.createElement("button"); b.className="opt"; b.textContent=L+") "+txt; b.onclick=()=>reveal(L,q,b); optsEl.appendChild(b) })}
-
-/* big effects */
-function effectNuke(x,y){ // full screen neon nuke
-  flash(1); camShake(700,28); punch(); sNuke();
-  neonPulse(x,y,120, "rgba(45,252,255,.55)");
-  neonPulse(x,y,260, "rgba(255,45,117,.40)");
-  ring(x,y,40); ring(x,y,120);
-  spawnFire(x,y,240); spawnSpark(x,y,"rgba(255,255,255,.98)",140); spawnStreaks(x,y,100); spawnDebris(x,y,60);
-}
-function effectNeonStorm(x,y){
-  flash(.7); camShake(520,22); punch(); sBoom();
-  lightning(x,y); lightning(x+120,y-40);
-  spawnSpark(x,y,"rgba(45,252,255,.98)",140); spawnSpark(x,y,"rgba(255,45,117,.98)",140);
-  ring(x,y,28); neonPulse(x,y,220,"rgba(45,252,255,.35)");
-}
-function effectMegaConfetti(x,y){ camShake(420,16); sPing(); spawnConfetti(x,y,160); ring(x,y,22); }
-function effectShockwave(x,y){ flash(.6); camShake(480,20); sBoom(); ring(x,y,36); spawnFire(x,y,180) }
-function effectStreakCascade(x,y){ camShake(360,16); sPing(); spawnStreaks(x,y,140); ring(x,y,18) }
-function effectDebrisBlast(x,y){ camShake(520,22); sBoom(); spawnDebris(x,y,120); spawnSpark(x,y,"rgba(255,255,255,.95)",80); ring(x,y,26) }
-
-const EFFECTS=[effectNuke,effectNeonStorm,effectMegaConfetti,effectShockwave,effectStreakCascade,effectDebrisBlast];
-
-function reveal(L,q,btn){
-  if(answered) return;
-  const correct=L===q.correct;
-  if(correct){
-    setLocked(true); if(btn) btn.classList.add("ok"); clearInterval(timer);
-    const speed=left/limit, base=Math.round(1500*speed), penalty=tried.size*200, pts=Math.max(50, base-penalty);
-    score+=pts; scoreEl.textContent=score;
-    let x=innerWidth*.5,y=150; if(btn){const r=btn.getBoundingClientRect(); x=r.left+r.width*.5; y=r.top+r.height*.5}
-    const fx=EFFECTS[Math.floor(Math.random()*EFFECTS.length)]; fx(x,y);
-    setTimeout(next,520);
-  }else{
-    if(!tried.has(L)) tried.add(L);
-    if(btn) btn.classList.add("no");
-    wrap.classList.remove("shake"); void wrap.offsetWidth; wrap.classList.add("shake");
-    sBuzz();
-  }
-}
-
-function finish(){ clearInterval(timer); setLocked(true); finalEl.textContent=score; document.getElementById("done").style.display="block"; renderLB() }
-
-/* local leaderboard */
-const LB_KEY="unhinged_lb";
-function getLB(){ try{return JSON.parse(localStorage.getItem(LB_KEY)||"[]")}catch(_){return[]} }
-function setLB(a){ localStorage.setItem(LB_KEY, JSON.stringify(a.slice(0,20))) }
-function addLB(name,score){ const a=getLB(); a.push({name,score,ts:Date.now()}); a.sort((x,y)=>y.score-x.score); setLB(a); renderLB() }
-function renderLB(){ const tbody=document.querySelector("#lb tbody"); tbody.innerHTML=""; getLB().slice(0,10).forEach((r,idx)=>{ const tr=document.createElement("tr"); const d=new Date(r.ts).toLocaleDateString(); tr.innerHTML=`<td>${idx+1}</td><td>${escapeHtml(r.name||"Player")}</td><td>${r.score}</td><td>${d}</td>`; tbody.appendChild(tr) }) }
-function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
-document.getElementById("saveScore").onclick=()=>{const n=document.getElementById("name").value.trim()||"Player"; addLB(n,score)};
-document.getElementById("clearLB").onclick=()=>{localStorage.removeItem(LB_KEY); renderLB()};
-
-/* go */
-load();
-</script>
-</body>
+function audio(){AC=AC||new (window.AudioContext||window.webkitAudioContext)(); return AC}
+function sBoom(){try{const ac=audio(); const g=ac.createGain(); g.gain.value=.18; g.connect(ac.destination); const o=ac.createOscillator(); o.type="sine"; o.frequency.setValueAtTime(120,ac.currentTime); o.frequency.exponentialRampToValueAtTime(40,ac.currentTime+.35); o.connect(g); const n=ac.createBufferSource(); const b=ac.createBuffer(1,ac.sampleRate*.4,ac.sampleRate); const ch=b.getChannelData(0); for(let i=0;i<ch.length;i++){ ch[i]=(
