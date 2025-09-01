@@ -6,7 +6,7 @@
 <style>
   :root{
     --bg1:#060917; --bg2:#10061a;
-    --fg:#f6f8ff; --accent:#2dfcff; --hot:#ff2d75; --ok:#96ff96; --no:#ff6b88;
+    --fg:#ffffff; --accent:#2dfcff; --hot:#ff2d75; --ok:#96ff96; --no:#ff6b88;
   }
   *{box-sizing:border-box}
   html,body{height:100%}
@@ -23,33 +23,38 @@
   }
   @keyframes drift{0%{background-position:0% 0%}50%{background-position:100% 100%}100%{background-position:0% 0%}}
 
-  /* scanlines, vignette, chroma fringe */
   .fx::before,.fx::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:0}
   .fx::before{
     background:repeating-linear-gradient(transparent,transparent 2px,rgba(255,255,255,.02) 3px);
     mix-blend-mode:overlay
   }
   .fx::after{box-shadow:inset 0 0 160px rgba(0,0,0,.65)}
-  /* chroma fringing */
-  .chroma::before,.chroma::after{
-    content:attr(data-text); position:absolute; inset:0; pointer-events:none;
-    filter: blur(.6px) saturate(1.2);
-  }
-  .chroma::before{color:#2dfcff; transform:translateX(-1px)}
-  .chroma::after{color:#ff2d75; transform:translateX(1px)}
 
   #cam{position:relative; z-index:1; transform-origin:50% 35%}
   .punch{animation:punch .25s ease}
   @keyframes punch{0%{transform:scale(1)}40%{transform:scale(1.08) rotate(.4deg)}100%{transform:scale(1)}}
 
   #wrap{max-width:1100px;margin:34px auto;padding:16px}
-  h1{margin:0 0 12px; font-size:44px; letter-spacing:.5px; position:relative}
-  h1 span{position:relative; display:inline-block}
+  h1{margin:0 0 12px; font-size:44px; letter-spacing:.5px; position:relative; display:inline-block}
+  /* subtle always on glow */
+  h1{text-shadow:0 0 18px rgba(45,252,255,.25),0 0 8px rgba(255,45,117,.18)}
+  /* tiny random title motions */
+  .tPulse{animation:glowPulse 2s ease}
+  .tTilt{animation:tilt .6s ease}
+  .tHue{animation:hue 3s ease}
+  .tFlicker{animation:flicker 1s linear}
+  @keyframes glowPulse{0%,100%{text-shadow:0 0 10px rgba(45,252,255,.15)}50%{text-shadow:0 0 28px rgba(45,252,255,.45)}}
+  @keyframes tilt{0%{transform:rotate(0)}50%{transform:rotate(.6deg)}100%{transform:rotate(0)}}
+  @keyframes hue{0%{filter:hue-rotate(0)}100%{filter:hue-rotate(20deg)}}
+  @keyframes flicker{
+    0%,19%,21%,23%,25%,54%,56%,100%{opacity:1}
+    20%,24%,55%{opacity:.6}
+  }
+
   #hud{display:flex;align-items:center;gap:10px;margin:8px 0 14px;opacity:.95}
   #bar{position:relative;height:14px;flex:1;background:#ffffff25;border-radius:999px;overflow:hidden}
   #fill{position:absolute;inset:0;width:100%;background:linear-gradient(90deg,var(--hot),var(--accent))}
-  #q{font-size:30px;margin:18px 0 12px; position:relative}
-  #q span{position:relative; display:inline-block}
+  #q{font-size:30px;margin:18px 0 12px} /* white on purpose */
 
   .opt{display:block;width:100%;text-align:left;margin:10px 0;padding:16px 18px;border-radius:16px;
        border:1px solid #ffffff3a;color:var(--fg);background:#ffffff16;cursor:pointer;font-weight:800;
@@ -87,12 +92,12 @@
 
 <body class="fx">
   <div id="flash"></div>
-  <canvas id="fx" ></canvas>
+  <canvas id="fx"></canvas>
   <canvas id="fx2"></canvas>
 
   <div id="cam">
     <div id="wrap">
-      <h1><span class="chroma" data-text="Unhinged Trivia">Unhinged Trivia</span></h1>
+      <h1 id="title">Unhinged Trivia</h1>
 
       <div id="hud">
         <div>Score <b id="score">0</b></div>
@@ -101,7 +106,7 @@
         <div id="bar"><div id="fill"></div></div>
       </div>
 
-      <h2 id="q"><span class="chroma" data-text="Loading...">Loading...</span></h2>
+      <h2 id="q">Loading...</h2>
       <div id="opts"></div>
 
       <div id="done">
@@ -124,28 +129,31 @@
   </div>
 
 <script>
-const FX = { scale: 10 };  // turn this up or down to taste
+const FX = { scale: 10 }; // turn this up for even bigger blasts
 
-/* config, state */
+/* state */
 const CSV_URL = "https://raw.githubusercontent.com/Grouchy-Lawn-Chair/TriviaTrivia/main/questions.csv";
-const $ = s => document.querySelector(s);
-const cam = $("#cam"), wrap = $("#wrap"), qEl = $("#q"), optsEl = $("#opts");
+const $  = s => document.querySelector(s);
+const cam = $("#cam"), title = $("#title"), wrap = $("#wrap"), qEl = $("#q"), optsEl = $("#opts");
 const idxEl = $("#idx"), scoreEl = $("#score"), finalEl = $("#final");
 const fill = $("#fill"), flashEl = $("#flash");
 let Q = [], i = 0, score = 0, tried = new Set(), answered = false, limit = 20, left = 0, timer = 0;
 
-/* canvas layer 1, particles and rings */
+/* canvas 1, particles */
 const c = document.getElementById("fx"), ctx = c.getContext("2d");
 let W,H,parts=[]; function resize(){W=c.width=innerWidth;H=c.height=innerHeight} addEventListener("resize",resize); resize();
 
-/* canvas layer 2, lightning and trails */
+/* canvas 2, lightning and trails */
 const c2 = document.getElementById("fx2"), g2 = c2.getContext("2d");
 function resize2(){c2.width=innerWidth; c2.height=innerHeight; g2.globalCompositeOperation="lighter"} addEventListener("resize",resize2); resize2();
 
+/* particles */
 function spawnSpark(x,y,color,count){count=Math.round(count*FX.scale);for(let k=0;k<count;k++){parts.push({x,y,r:1+Math.random()*2,vx:(Math.random()*2-1)*6,vy:-Math.random()*6-3,a:1,col:color,type:"s"})}}
 function spawnFire(x,y,count){count=Math.round(count*FX.scale);for(let k=0;k<count;k++){parts.push({x,y,r:2+Math.random()*3,vx:(Math.random()*2-1)*4,vy:-Math.random()*4-2,a:1,col:`rgba(${220+Math.random()*35},${90+Math.random()*90},0,1)`,type:"f"})}}
 function spawnConfetti(x,y,count){count=Math.round(count*FX.scale);for(let k=0;k<count;k++){parts.push({x,y,r:2+Math.random()*3,w:6+Math.random()*8,h:3+Math.random()*6,rot:Math.random()*Math.PI,vr:(Math.random()-.5)*.4,vx:(Math.random()*2-1)*5,vy:-Math.random()*6-3,a:1,col:Math.random()<.5?"#2dfcff":"#ff2d75",type:"confetti"})}}
+function spawnStreaks(x,y,count){count=Math.round(count*FX.scale);for(let k=0;k<count;k++){const ang=Math.random()*Math.PI*2;const sp=6+Math.random()*8;parts.push({x,y,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp,len:18+Math.random()*28,a:1,type:"streak"})}}
 function ring(x,y){parts.push({x,y,r:14,vx:0,vy:0,a:1,col:"rgba(255,255,255,.95)",type:"ring"})}
+
 function tick(){
   ctx.clearRect(0,0,W,H);
   for(let p of parts){
@@ -157,12 +165,18 @@ function tick(){
       p.x+=p.vx; p.y+=p.vy; p.vy+=.15; p.rot+=p.vr; p.a*=.98;
       ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot); ctx.globalAlpha=p.a; ctx.fillStyle=p.col;
       ctx.fillRect(-p.w*.5,-p.h*.5,p.w,p.h); ctx.restore();
+    }else if(p.type==="streak"){
+      p.x+=p.vx; p.y+=p.vy; p.a*=.94;
+      ctx.globalAlpha=Math.max(0,p.a);
+      ctx.strokeStyle="rgba(255,255,255,.9)";
+      ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(p.x-p.vx*0.8,p.y-p.vy*0.8); ctx.stroke();
     }else{
       p.x+=p.vx; p.y+=p.vy; p.vy+=p.type==="f"?0.14:0.08; p.a*=.96; p.r*=.985;
       ctx.globalAlpha=Math.max(0,p.a); ctx.fillStyle=p.col; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
     }
   }
-  parts=parts.filter(p=>p.a>.04 && p.r<1200 && p.y<H+30);
+  parts=parts.filter(p=>p.a>.04 && (p.r||0)<1200 && p.y<H+30);
   requestAnimationFrame(tick);
 }
 tick();
@@ -170,65 +184,51 @@ tick();
 /* lightning on layer 2 */
 const bolts=[];
 function lightning(x,y){
-  // start somewhere at top
-  let sx = Math.random()*innerWidth, sy = -10, tx = x, ty = y;
-  let p = {pts:[], a:1}; bolts.push(p);
+  let sx=Math.random()*innerWidth, sy=-10, tx=x, ty=y;
+  let p={pts:[], a:1}; bolts.push(p);
   let cx=sx, cy=sy;
-  const steps = 18;
+  const steps=18;
   for(let i=0;i<steps;i++){
-    const t = i/(steps-1);
-    const nx = cx + (tx-cx)/2 + (Math.random()*120-60);
-    const ny = cy + (ty-cy)/2 + (Math.random()*60);
-    p.pts.push([cx,cy, nx,ny]);
-    cx = nx; cy = ny;
+    const nx=cx+(tx-cx)/2+(Math.random()*120-60);
+    const ny=cy+(ty-cy)/2+(Math.random()*60);
+    p.pts.push([cx,cy,nx,ny]); cx=nx; cy=ny;
   }
 }
 function tick2(){
   g2.clearRect(0,0,innerWidth,innerHeight);
   for(const b of bolts){
-    b.a *= .88;
-    g2.globalAlpha = Math.max(0,b.a);
-    g2.lineWidth = 5;
-    g2.strokeStyle = "rgba(255,255,255,1)";
-    g2.beginPath();
-    b.pts.forEach(seg=>{g2.moveTo(seg[0],seg[1]); g2.lineTo(seg[2],seg[3])});
-    g2.stroke();
-    g2.lineWidth = 2;
-    g2.strokeStyle = "rgba(45,252,255,1)";
-    g2.beginPath();
-    b.pts.forEach(seg=>{g2.moveTo(seg[0],seg[1]); g2.lineTo(seg[2],seg[3])});
-    g2.stroke();
+    b.a*=.88;
+    g2.globalAlpha=Math.max(0,b.a);
+    g2.lineWidth=5; g2.strokeStyle="rgba(255,255,255,1)"; g2.beginPath();
+    b.pts.forEach(seg=>{g2.moveTo(seg[0],seg[1]); g2.lineTo(seg[2],seg[3])}); g2.stroke();
+    g2.lineWidth=2; g2.strokeStyle="rgba(45,252,255,1)"; g2.beginPath();
+    b.pts.forEach(seg=>{g2.moveTo(seg[0],seg[1]); g2.lineTo(seg[2],seg[3])}); g2.stroke();
   }
   for(let i=bolts.length-1;i>=0;i--) if(bolts[i].a<.05) bolts.splice(i,1);
   requestAnimationFrame(tick2);
 }
 tick2();
 
-/* flash, camera punch */
+/* flash and camera punch */
 function flash(){flashEl.style.opacity="1";flashEl.style.transition="opacity .12s";requestAnimationFrame(()=>{flashEl.style.opacity="0"})}
 function punch(){cam.classList.remove("punch"); void cam.offsetWidth; cam.classList.add("punch")}
+
+/* title micro animations */
+function randomTitleNudge(){
+  const classes=["tPulse","tTilt","tHue","tFlicker"];
+  const pick=classes[Math.floor(Math.random()*classes.length)];
+  title.classList.add(pick);
+  setTimeout(()=>title.classList.remove(pick), 1200);
+}
+setInterval(()=>{ if(Math.random()<.8) randomTitleNudge() }, 3500);
 
 /* audio */
 let AC;
 function audio(){AC=AC||new (window.AudioContext||window.webkitAudioContext)();return AC}
-function boom(){
-  try{
-    const ac=audio(); const o=ac.createOscillator(), n=ac.createBufferSource(), g=ac.createGain();
-    o.type="sine"; o.frequency.value=85; g.gain.value=.12;
-    const buf=ac.createBuffer(1,ac.sampleRate*.25,ac.sampleRate), ch=buf.getChannelData(0);
-    for(let k=0;k<ch.length;k++){ ch[k]=(Math.random()*2-1)*Math.pow(1-k/ch.length,1.8) }
-    n.buffer=buf; o.connect(g); n.connect(g); g.connect(ac.destination);
-    o.start(); n.start(); g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime+.35); o.stop(ac.currentTime+.35);
-  }catch(_){}
-}
-function buzz(){
-  try{
-    const ac=audio(); const o=ac.createOscillator(), g=ac.createGain(); o.type="square"; o.frequency.value=140; g.gain.value=.12;
-    o.connect(g); g.connect(ac.destination); o.start(); g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime+.24); o.stop(ac.currentTime+.24);
-  }catch(_){}
-}
+function boom(){try{const ac=audio();const o=ac.createOscillator(),n=ac.createBufferSource(),g=ac.createGain();o.type="sine";o.frequency.value=85;g.gain.value=.12;const buf=ac.createBuffer(1,ac.sampleRate*.25,ac.sampleRate),ch=buf.getChannelData(0);for(let k=0;k<ch.length;k++){ch[k]=(Math.random()*2-1)*Math.pow(1-k/ch.length,1.8)}n.buffer=buf;o.connect(g);n.connect(g);g.connect(ac.destination);o.start();n.start();g.gain.exponentialRampToValueAtTime(0.0001,ac.currentTime+.35);o.stop(ac.currentTime+.35)}catch(_){}} 
+function buzz(){try{const ac=audio();const o=ac.createOscillator(),g=ac.createGain();o.type="square";o.frequency.value=140;g.gain.value=.12;o.connect(g);g.connect(ac.destination);o.start();g.gain.exponentialRampToValueAtTime(0.0001,ac.currentTime+.24);o.stop(ac.currentTime+.24)}catch(_){}} 
 
-/* robust CSV parser */
+/* CSV parser */
 function parseCSV(txt){
   const rows=[];let row=[],cell="",inQ=false;
   for(let i=0;i<txt.length;i++){
@@ -246,10 +246,7 @@ function parseCSV(txt){
 
 /* helpers */
 function shuffle(a){for(let j=a.length-1;j>0;j--){const k=Math.floor(Math.random()*(j+1));[a[j],a[k]]=[a[k],a[j]]}return a}
-function setTimer(sec){
-  limit=sec; left=sec; clearInterval(timer); fill.style.width="100%";
-  timer=setInterval(()=>{left=Math.max(0,left-1); fill.style.width=Math.round(100*left/limit)+"%"; if(left<=0){clearInterval(timer); reveal("")}},1000)
-}
+function setTimer(sec){limit=sec; left=sec; clearInterval(timer); fill.style.width="100%"; timer=setInterval(()=>{left=Math.max(0,left-1); fill.style.width=Math.round(100*left/limit)+"%"; if(left<=0){clearInterval(timer); reveal("")}},1000)}
 function setLocked(on){wrap.classList.toggle("locked",on); answered=on}
 
 /* flow */
@@ -259,15 +256,13 @@ async function load(){
     Q=shuffle(parseCSV(t));
     if(!Q.length) throw Error("no questions");
     i=0; score=0; scoreEl.textContent=score; next();
-  }catch(e){ qEl.innerHTML = '<span class="chroma" data-text="Load failed">'+('Load failed, '+e)+'</span>'; }
+  }catch(e){ qEl.textContent = "Load failed, " + e; }
 }
 
 function next(){
   if(i>=Q.length){ return finish() }
-  const q=Q[i++]; idxEl.textContent=i+"/"+Q.length;
-  qEl.innerHTML = '<span class="chroma" data-text="'+escapeHtml(q.question)+'">'+escapeHtml(q.question)+'</span>';
+  const q=Q[i++]; idxEl.textContent=i+"/"+Q.length; qEl.textContent=q.question;
   tried.clear(); setLocked(false); setTimer(q.timeLimit);
-
   optsEl.innerHTML="";
   ["A","B","C","D"].forEach(L=>{
     const txt=q["option"+L]; if(!txt) return;
@@ -276,61 +271,20 @@ function next(){
   });
 }
 
+/* random effect chooser for correct answers */
+function effectFireball(x,y){spawnFire(x,y,120); spawnSpark(x,y,"rgba(45,252,255,.98)",60); ring(x,y); flash(); punch(); boom();}
+function effectLightningStorm(x,y){lightning(x,y); lightning(x+60,y-20); flash(); punch(); boom();}
+function effectMegaConfetti(x,y){spawnConfetti(x,y,80); ring(x,y); punch(); }
+function effectNeonNova(x,y){spawnSpark(x,y,"rgba(45,252,255,.98)",90); spawnSpark(x,y,"rgba(255,45,117,.98)",90); ring(x,y); flash(); punch(); }
+function effectShockwave(x,y){ring(x,y); flash(); punch(); }
+function effectStreakCascade(x,y){spawnStreaks(x,y,70); ring(x,y); }
+
+const EFFECTS=[effectFireball,effectLightningStorm,effectMegaConfetti,effectNeonNova,effectShockwave,effectStreakCascade];
+
 function reveal(L,q,btn){
   if(answered) return;
   const correct=L===q.correct;
   if(correct){
     setLocked(true);
     btn && btn.classList.add("ok");
-    clearInterval(timer);
-
-    const speed = left/limit;
-    const base  = Math.round(1500*speed);
-    const penalty = tried.size*200;
-    const pts = Math.max(50, base - penalty);
-    score += pts; scoreEl.textContent=score;
-
-    // fx target
-    let x=innerWidth*.5,y=150; if(btn){const r=btn.getBoundingClientRect(); x=r.left+r.width*.5; y=r.top+r.height*.5}
-
-    spawnSpark(x,y,"rgba(45,252,255,.98)",70);
-    spawnSpark(x,y,"rgba(255,45,117,.98)",70);
-    spawnFire(x,y,120);
-    spawnConfetti(x,y,60);
-    ring(x,y); lightning(x,y); flash(); punch(); boom();
-
-    setTimeout(next,400);
-  }else{
-    if(!tried.has(L)) tried.add(L);
-    btn && btn.classList.add("no");
-    wrap.classList.remove("shake"); void wrap.offsetWidth; wrap.classList.add("shake");
-    spawnFire(innerWidth*.5,120,50); lightning(innerWidth*.5,160); buzz();
-  }
-}
-
-function finish(){
-  clearInterval(timer); setLocked(true);
-  finalEl.textContent=score; document.getElementById("done").style.display="block"; renderLB();
-}
-
-/* local leaderboard */
-const LB_KEY="unhinged_lb";
-function getLB(){ try{return JSON.parse(localStorage.getItem(LB_KEY)||"[]")}catch(_){return[]} }
-function setLB(a){ localStorage.setItem(LB_KEY, JSON.stringify(a.slice(0,20))) }
-function addLB(name,score){ const a=getLB(); a.push({name,score,ts:Date.now()}); a.sort((x,y)=>y.score-x.score); setLB(a); renderLB() }
-function renderLB(){
-  const tbody=document.querySelector("#lb tbody"); tbody.innerHTML="";
-  getLB().slice(0,10).forEach((r,idx)=>{
-    const tr=document.createElement("tr"); const d=new Date(r.ts).toLocaleDateString();
-    tr.innerHTML=`<td>${idx+1}</td><td>${escapeHtml(r.name||"Player")}</td><td>${r.score}</td><td>${d}</td>`;
-    tbody.appendChild(tr);
-  });
-}
-function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m]))}
-document.getElementById("saveScore").onclick=()=>{const n=document.getElementById("name").value.trim()||"Player"; addLB(n,score)};
-document.getElementById("clearLB").onclick=()=>{localStorage.removeItem(LB_KEY); renderLB()};
-
-/* go */
-load();
-</script>
-</body>
+    clear
