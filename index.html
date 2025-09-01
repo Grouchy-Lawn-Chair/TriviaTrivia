@@ -1,15 +1,289 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Unhinged Trivia</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{
+    --bg1:#0a0f1f; --bg2:#0f0a1f;
+    --fg:#f4f7ff; --accent:#2dfcff; --hot:#ff2d75; --ok:#9cff9c; --no:#ff7b7b;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; color:var(--fg);
+    font:16px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    background:
+      radial-gradient(1200px 600px at 20% -10%, rgba(25,252,255,0.12), transparent 60%),
+      radial-gradient(1000px 800px at 120% 20%, rgba(255,45,117,0.10), transparent 60%),
+      linear-gradient(135deg,var(--bg1),var(--bg2));
+    overflow-x:hidden;
+  }
+  /* subtle scanlines and vignette */
+  .fx::before,.fx::after{
+    content:""; position:fixed; inset:0; pointer-events:none;
+  }
+  .fx::before{
+    background: repeating-linear-gradient(transparent,transparent 2px, rgba(255,255,255,0.02) 3px);
+    mix-blend-mode: overlay;
+  }
+  .fx::after{
+    box-shadow: inset 0 0 120px rgba(0,0,0,0.6);
+  }
 
-<!doctype html><meta charset=utf-8><title>Unhinged Trivia</title>
-<style>body{margin:0;font-family:system-ui;background:#0b0f1a;color:#f8f8ff}#c{max-width:800px;margin:40px auto;padding:16px}h1{margin:0 0 8px}button{display:block;width:100%;margin:8px 0;padding:12px;border-radius:10px;border:1px solid #ffffff30;background:#ffffff10;color:#fff;font-weight:700;text-align:left}#p{height:8px;background:#ffffff20;border-radius:99px;overflow:hidden}#b{height:100%;width:100%;background:linear-gradient(90deg,#ff2d75,#2dfcff)}</style>
-<div id=c><h1>Unhinged Trivia</h1><div>Score <b id=s>0</b> • Q <b id=i>0</b></div><div id=p><div id=b></div></div><h2 id=q>Loading...</h2><div id=o></div>
-<div id=done style=display:none><h2>Done</h2><p>Total <b id=fs>0</b></p></div></div>
+  #wrap{position:relative; max-width:960px; margin:32px auto; padding:16px;}
+  h1{margin:0 0 12px; font-size:38px; letter-spacing:.5px; text-shadow:0 0 22px rgba(45,252,255,.35)}
+  #hud{display:flex; align-items:center; gap:10px; margin-bottom:10px; opacity:.95}
+  #bar{position:relative; height:10px; flex:1; background:#ffffff18; border-radius:999px; overflow:hidden}
+  #fill{position:absolute; inset:0; width:100%; background:linear-gradient(90deg,var(--hot),var(--accent))}
+  #q{font-size:28px; margin:16px 0 12px}
+
+  .opt{display:block; width:100%; text-align:left; margin:10px 0; padding:14px 16px;
+       border-radius:14px; border:1px solid #ffffff35; color:var(--fg);
+       background:#ffffff10; cursor:pointer; font-weight:700; transition:transform .06s ease, background .15s ease, border-color .15s ease}
+  .opt:hover{transform:translateY(-1px); background:#ffffff14}
+  .opt.ok{background: #10351e; border-color:#2fff8f; box-shadow:0 0 22px rgba(46,255,143,.25)}
+  .opt.no{background: #34101a; border-color:#ff5b8b; box-shadow:0 0 22px rgba(255,91,139,.30)}
+  .shake{animation:shake .35s cubic-bezier(.36,.07,.19,.97)}
+  @keyframes shake{
+    10%{transform:translate(-2px, 1px) rotate(-0.5deg)}
+    20%{transform:translate(3px, -2px) rotate(.6deg)}
+    30%{transform:translate(-3px, 2px) rotate(-.6deg)}
+    40%{transform:translate(2px, -1px) rotate(.4deg)}
+    50%{transform:translate(-1px, 1px) rotate(-.3deg)}
+    60%{transform:translate(1px, 0px) rotate(.2deg)}
+    70%{transform:translate(-1px, 1px) rotate(-.2deg)}
+    80%{transform:translate(1px, -1px) rotate(.2deg)}
+    90%{transform:translate(-1px, 1px) rotate(-.1deg)}
+  }
+
+  #done{display:none; margin-top:22px}
+  table{width:100%; border-collapse:collapse; margin-top:8px}
+  th,td{padding:8px 10px; border-bottom:1px solid #ffffff22; text-align:left}
+  th{opacity:.8}
+  input[type="text"]{background:#ffffff12; border:1px solid #ffffff33; color:var(--fg); padding:10px; border-radius:10px}
+  .btn{display:inline-block; margin:8px 6px 0 0; padding:10px 12px; border-radius:10px; border:1px solid #ffffff35; background:#ffffff14; color:var(--fg); cursor:pointer}
+  .btn:hover{background:#ffffff18}
+  small{opacity:.75}
+  canvas{position:fixed; inset:0; pointer-events:none; z-index:0}
+</style>
+
+<body class="fx">
+  <canvas id="fx"></canvas>
+  <div id="wrap">
+    <h1>Unhinged Trivia</h1>
+    <div id="hud">
+      <div>Score <b id="score">0</b></div>
+      <div>•</div>
+      <div>Q <b id="idx">0</b></div>
+      <div id="bar"><div id="fill"></div></div>
+    </div>
+
+    <h2 id="q">Loading…</h2>
+    <div id="opts"></div>
+
+    <div id="done">
+      <h2>Done</h2>
+      <p>Total <b id="final">0</b></p>
+      <div id="lbWrap">
+        <div style="margin:6px 0 10px">
+          <input id="name" type="text" placeholder="Your name" maxlength="24">
+          <button class="btn" id="saveScore">Save score</button>
+          <button class="btn" id="clearLB">Clear leaderboard</button>
+        </div>
+        <table id="lb">
+          <thead><tr><th>#</th><th>Name</th><th>Score</th><th>Date</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <small>Leaderboard is stored locally in this browser</small>
+      </div>
+    </div>
+  </div>
+
 <script>
-const CSV="https://raw.githubusercontent.com/Grouchy-Lawn-Chair/TriviaTrivia/main/questions.csv";
-let Q=[],idx=0,score=0,left=0,timer=0,wrongs=0,limit=20;
-const $=id=>document.getElementById(id);
-function parse(s){let L=s.trim().split(/\r?\n/),H=L.shift().split(",");return L.map((ln,k)=>{let c=ln.split(","),r={};H.forEach((h,i)=>r[h]=c[i]||"");r.qid=r.qid||k+1;r.timeLimit=+r.timeLimit||20;return r;});}
-fetch(CSV,{cache:"no-store"}).then(r=>r.text()).then(t=>{Q=parse(t);next();}).catch(e=>{$("q").textContent="Load failed, "+e});
-function next(){if(idx>=Q.length){end();return}const q=Q[idx++];$("i").textContent=idx+"/"+Q.length;$("q").textContent=q.question;wrongs=0;limit=q.timeLimit;left=limit;clearInterval(timer);$("b").style.width="100%";timer=setInterval(()=>{left--;$("b").style.width=Math.max(0,Math.round(left/limit*100))+"%";if(left<=0){clearInterval(timer);reveal("",q)}},1000);let w=$("o");w.innerHTML="";["A","B","C","D"].forEach(L=>{let t=q["option"+L];if(!t)return;let bt=document.createElement("button");bt.textContent=L+") "+t;bt.onclick=()=>reveal(L,q,bt);w.appendChild(bt);});}
-function reveal(L,q,bt){if(L===q.correct){bt&&bt.classList.add("ok");let pts=Math.max(25,Math.round(1000*(left/limit))-wrongs*100);score+=pts;$("s").textContent=score;setTimeout(next,250);}else{wrongs++;bt&&bt.classList.add("no");}}
-function end(){clearInterval(timer);$("fs").textContent=score;$("done").style.display="block";}
+const CSV_URL = "https://raw.githubusercontent.com/Grouchy-Lawn-Chair/TriviaTrivia/main/questions.csv";
+const $ = sel => document.querySelector(sel);
+const wrap = $("#wrap"), qEl = $("#q"), optsEl = $("#opts");
+const idxEl = $("#idx"), scoreEl = $("#score"), finalEl = $("#final");
+const bar = $("#bar"), fill = $("#fill");
+let Q = [], i = 0, score = 0, wrongs = 0, limit = 20, left = 0, timer = 0;
+
+// canvas particle fx
+const c = document.getElementById("fx"), ctx = c.getContext("2d");
+let W,H,parts=[];
+function resize(){W = c.width = innerWidth; H = c.height = innerHeight;}
+addEventListener("resize", resize); resize();
+function spawn(x,y,color,count){
+  for(let k=0;k<count;k++){
+    parts.push({
+      x, y, r: 1 + Math.random()*2,
+      vx: (Math.random()*2-1)*4, vy: -Math.random()*4 - 2,
+      a: 1, color
+    });
+  }
+}
+function tick(){
+  ctx.clearRect(0,0,W,H);
+  for(let p of parts){
+    p.x += p.vx; p.y += p.vy; p.vy += 0.08; p.a *= 0.96; p.r *= 0.98;
+    ctx.globalAlpha = Math.max(0, p.a);
+    ctx.fillStyle = p.color;
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
+  }
+  parts = parts.filter(p=>p.a>0.04 && p.y < H+10);
+  requestAnimationFrame(tick);
+}
+tick();
+
+// tiny WebAudio beeps
+let AC, osc;
+function beep(type="ok", speed=1){
+  try{
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    const o = AC.createOscillator(), g = AC.createGain();
+    o.connect(g); g.connect(AC.destination);
+    if(type==="ok"){ o.frequency.value = 300 + 300*speed; g.gain.value = .06; }
+    else { o.frequency.value = 120; g.gain.value = .09; }
+    o.type = type==="ok" ? "triangle" : "square";
+    o.start();
+    g.gain.exponentialRampToValueAtTime(0.0001, AC.currentTime + 0.25);
+    o.stop(AC.currentTime + 0.25);
+  }catch(_){}
+}
+
+// RFC 4180 style CSV parser, supports quotes and commas
+function parseCSV(txt){
+  const rows=[]; let row=[], cell="", inQ=false; 
+  for(let i=0;i<txt.length;i++){
+    const ch = txt[i], nx = txt[i+1];
+    if(inQ){
+      if(ch === '"' && nx === '"'){ cell+='"'; i++; }
+      else if(ch === '"'){ inQ = false; }
+      else cell += ch;
+    }else{
+      if(ch === '"'){ inQ = true; }
+      else if(ch === ','){ row.push(cell); cell=""; }
+      else if(ch === '\r'){ /* skip */ }
+      else if(ch === '\n'){ row.push(cell); rows.push(row); row=[]; cell=""; }
+      else cell += ch;
+    }
+  }
+  if(cell.length || row.length) { row.push(cell); rows.push(row); }
+  if(!rows.length) return [];
+  const head = rows.shift();
+  return rows.filter(r => r.length && r.some(x => x && x.trim().length)).map((r,idx)=>{
+    const o={}; head.forEach((h,ii)=>{ o[h]=r[ii]||""; });
+    o.qid = o.qid || (idx+1);
+    o.timeLimit = +o.timeLimit || 20;
+    return o;
+  });
+}
+
+async function load(){
+  try{
+    const t = await fetch(CSV_URL, {cache:"no-store"}).then(r=>r.text());
+    Q = parseCSV(t);
+    if(!Q.length) throw Error("no questions");
+    i=0; score=0; scoreEl.textContent=score; next();
+  }catch(e){
+    qEl.textContent = "Load failed, " + e;
+  }
+}
+
+function setTimer(seconds){
+  limit = seconds; left = seconds;
+  clearInterval(timer); fill.style.width="100%";
+  timer = setInterval(()=>{
+    left = Math.max(0, left-1);
+    const w = Math.round(100 * left/limit);
+    fill.style.width = w + "%";
+    if(left <= 0){
+      clearInterval(timer);
+      reveal(""); // timeout
+    }
+  }, 1000);
+}
+
+function next(){
+  if(i >= Q.length){ return finish(); }
+  const q = Q[i++];
+  idxEl.textContent = i + "/" + Q.length;
+  qEl.textContent = q.question;
+  wrongs = 0;
+  setTimer(q.timeLimit);
+
+  // render options
+  optsEl.innerHTML = "";
+  ["A","B","C","D"].forEach(L=>{
+    const txt = q["option"+L];
+    if(!txt) return;
+    const b = document.createElement("button");
+    b.className = "opt";
+    b.textContent = L + ") " + txt;
+    b.onclick = () => reveal(L, q, b);
+    optsEl.appendChild(b);
+  });
+}
+
+function reveal(L, q, btn){
+  const correct = L === q.correct;
+  if(correct){
+    if(btn) btn.classList.add("ok");
+    clearInterval(timer);
+    const speed = left/limit;
+    const base = Math.round(1200 * speed);
+    const penalty = wrongs * 150;
+    const pts = Math.max(50, base - penalty);
+    score += pts; scoreEl.textContent = score;
+
+    // particles from the button
+    if(btn){
+      const r = btn.getBoundingClientRect();
+      const x = r.left + r.width*.5, y = r.top + r.height*.5;
+      spawn(x, y, "rgba(45,252,255,.9)", 45);
+      spawn(x, y, "rgba(255,45,117,.9)", 45);
+    }
+    beep("ok", Math.min(1, left/limit));
+    setTimeout(next, 280);
+  }else{
+    wrongs++;
+    if(btn) btn.classList.add("no");
+    wrap.classList.remove("shake");
+    void wrap.offsetWidth; // reflow
+    wrap.classList.add("shake");
+    spawn(innerWidth*.5, 120, "rgba(255,91,139,.6)", 25);
+    beep("no");
+  }
+}
+
+function finish(){
+  clearInterval(timer);
+  finalEl.textContent = score;
+  $("#done").style.display = "block";
+  renderLB();
+}
+
+const LB_KEY = "unhinged_lb";
+function getLB(){ try{return JSON.parse(localStorage.getItem(LB_KEY)||"[]")}catch(_){return []} }
+function setLB(arr){ localStorage.setItem(LB_KEY, JSON.stringify(arr.slice(0, 20))); }
+function addLB(name,score){ const a=getLB(); a.push({name,score,ts:Date.now()}); a.sort((x,y)=>y.score-x.score); setLB(a); renderLB(); }
+function renderLB(){
+  const tbody = $("#lb tbody"); tbody.innerHTML = "";
+  getLB().slice(0,10).forEach((r,idx)=>{
+    const tr = document.createElement("tr");
+    const d = new Date(r.ts); const ds = d.toLocaleDateString();
+    tr.innerHTML = `<td>${idx+1}</td><td>${escapeHtml(r.name||"Player")}</td><td>${r.score}</td><td>${ds}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+function escapeHtml(s){return s.replace(/[&<>"']/g,m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m]))}
+
+$("#saveScore").onclick = ()=>{
+  const n = $("#name").value.trim() || "Player";
+  addLB(n, score);
+};
+$("#clearLB").onclick = ()=>{ localStorage.removeItem(LB_KEY); renderLB(); };
+
+// start
+load();
 </script>
+</body>
