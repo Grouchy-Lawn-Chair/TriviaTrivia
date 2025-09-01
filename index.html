@@ -20,7 +20,6 @@
 
   /* layers */
   #bg{position:fixed; inset:0; z-index:0}
-  /* lighter dimmer so backgrounds stay bright */
   #shade{
     position:fixed; inset:0; z-index:1; pointer-events:none;
     background:
@@ -32,11 +31,9 @@
   #flash{position:fixed; inset:0; background:#fff; opacity:0; z-index:4; pointer-events:none}
   #overlay{position:fixed; inset:0; z-index:5; pointer-events:none}
 
-  /* app */
   #cam{position:relative; z-index:6; transform-origin:50% 35%}
   #wrap{max-width:1100px; margin:34px auto; padding:16px}
 
-  /* strong readable outlines using text-shadow stack */
   .outline{
     text-shadow:
       0 0 22px rgba(0,0,0,.55),
@@ -93,7 +90,6 @@
   .btn:hover{background:#ffffff22}
   small{opacity:.75}
 
-  /* transitions */
   .slice{position:absolute; top:0; left:-30%; width:30%; height:100%;
     background:linear-gradient(135deg,rgba(45,252,255,.95),rgba(255,45,117,.95));
     transform:skewX(-20deg); animation:slice 420ms ease forwards}
@@ -138,15 +134,20 @@
             <button class="btn" id="clearLB">Clear leaderboard</button>
           </div>
           <table id="lb"><thead><tr><th>#</th><th>Name</th><th>Score</th><th>Date</th></tr></thead><tbody></tbody></table>
-          <small>Leaderboard is stored locally in this browser</small>
+          <small>Leaderboard is shared from the repo</small>
         </div>
       </div>
     </div>
   </div>
 
 <script>
+/* config */
+const CSV_URL     = "https://raw.githubusercontent.com/Grouchy-Lawn-Chair/TriviaTrivia/main/questions.csv";
+const WORKER_URL  = "https://unhingedrelay.mwcarbuy12.workers.dev";
+const SHARED_TOKEN= "superlong123random987";
+const LB_CSV_URL  = "https://raw.githubusercontent.com/Grouchy-Lawn-Chair/TriviaTrivia/main/leaderboard.csv";
+
 /* state */
-const CSV_URL = "https://raw.githubusercontent.com/Grouchy-Lawn-Chair/TriviaTrivia/main/questions.csv";
 const $  = s => document.querySelector(s);
 const cam = $("#cam"), title = $("#title"), wrap = $("#wrap"), qEl = $("#q"), optsEl = $("#opts");
 const idxEl = $("#idx"), scoreEl = $("#score"), finalEl = $("#final"), fill = $("#fill"), flashEl = $("#flash");
@@ -158,6 +159,8 @@ function setLocked(on){wrap.classList.toggle("locked",on); answered=on}
 function flash(strength=1){flashEl.style.opacity=String(Math.min(1,strength));flashEl.style.transition="opacity .25s";requestAnimationFrame(()=>{flashEl.style.opacity="0"})}
 function camShake(ms=450,amp=15){const t0=performance.now(), A=amp; function f(t){const k=Math.max(0,1-(t-t0)/ms); const x=(Math.random()*2-1)*A*k, y=(Math.random()*2-1)*A*k, r=(Math.random()*2-1)*0.9*k; cam.style.transform=`translate(${x}px,${y}px) rotate(${r}deg)`; if(k>0) requestAnimationFrame(f); else cam.style.transform=""} requestAnimationFrame(f)}
 function makeSampler(arr){let i=0, bag=arr.slice(); return function(){ if(i>=bag.length){bag=bag.slice().sort(()=>Math.random()-.5); i=0} return bag[i++] }}
+
+/* CSV parser to objects with header keys */
 function parseCSV(txt){
   const rows=[];let row=[],cell="",inQ=false;
   for(let i=0;i<txt.length;i++){
@@ -179,14 +182,12 @@ function parseCSV(txt){
 function randomTitleNudge(){const cls=["tPulse","tTilt","tHue","tFlick"][Math.floor(Math.random()*4)]; title.classList.add(cls); setTimeout(()=>title.classList.remove(cls),1200)}
 setInterval(()=>{ if(Math.random()<.8) randomTitleNudge() }, 2800);
 
-/* backgrounds, brighter */
+/* backgrounds */
 const bg = document.getElementById("bg"), bctx = bg.getContext("2d");
 let BW=0,BH=0,bFn=()=>{};
 const pickBg = makeSampler(["triangles","waves","halo","net"]);
-
 function resizeBG(){ BW=bg.width=innerWidth; BH=bg.height=innerHeight }
 addEventListener("resize", resizeBG); resizeBG();
-
 function setBgNext(){
   const kind = pickBg();
   if(kind==="triangles") bFn = bgTriangles();
@@ -194,8 +195,6 @@ function setBgNext(){
   else if(kind==="halo") bFn = bgHalo();
   else bFn = bgNet();
 }
-
-/* Brighter triangles, additive blend */
 function bgTriangles(){
   const tris = Array.from({length:80},()=>({
     x:Math.random()*BW, y:Math.random()*BH, r:60+Math.random()*160,
@@ -217,13 +216,10 @@ function bgTriangles(){
     });
   };
 }
-
-/* Brighter waves, two passes, additive blend */
 function bgWaves(){
   return (t)=>{
     bctx.clearRect(0,0,BW,BH);
     bctx.globalCompositeOperation = "screen";
-
     for(let k=0;k<12;k++){
       const y = (k/12)*BH;
       const a = 0.18 + 0.10*Math.sin(t*.001+k);
@@ -250,8 +246,6 @@ function bgWaves(){
     }
   };
 }
-
-/* Halo with stronger gradient */
 function bgHalo(){
   return (t)=>{
     bctx.clearRect(0,0,BW,BH);
@@ -264,25 +258,18 @@ function bgHalo(){
     bctx.fillStyle=g; bctx.beginPath(); bctx.arc(cx,cy,R,0,Math.PI*2); bctx.fill();
   };
 }
-
-/* Grid with higher alpha, additive blend */
 function bgNet(){
   return (t)=>{
     bctx.clearRect(0,0,BW,BH);
     bctx.globalCompositeOperation = "screen";
     const s = 60, off = (t*.06)%s;
-
-    bctx.globalAlpha=.20;
-    bctx.strokeStyle="#2dfcff";
+    bctx.globalAlpha=.20; bctx.strokeStyle="#2dfcff";
     for(let x=-s+off;x<BW;x+=s){ bctx.beginPath(); bctx.moveTo(x,0); bctx.lineTo(x,BH); bctx.stroke() }
     for(let y=-s+off;y<BH;y+=s){ bctx.beginPath(); bctx.moveTo(0,y); bctx.lineTo(BW,y); bctx.stroke() }
-
-    bctx.globalAlpha=.16;
-    bctx.strokeStyle="#ff2d75";
+    bctx.globalAlpha=.16; bctx.strokeStyle="#ff2d75";
     for(let x=-s*2+off*1.3;x<BW;x+=s*2){ bctx.beginPath(); bctx.moveTo(x,0); bctx.lineTo(x,BH); bctx.stroke() }
   };
 }
-
 function loopBG(ts){ bFn(ts); requestAnimationFrame(loopBG) }
 requestAnimationFrame(loopBG);
 
@@ -313,7 +300,6 @@ function spawnFire(x,y,count){
           col:`rgba(${220+Math.random()*35},${90+Math.random()*90},0,1)`, type:"f"});
   }
 }
-/* radial confetti around a point */
 function spawnConfetti(x,y,count){
   count = scaleCount(count);
   for(let k=0;k<count;k++){
@@ -344,12 +330,8 @@ function spawnDebris(x,y,count){
 function neonPulse(x,y,rad,color){push({x,y,rad:rad,a:1,col:color,type:"neon"})}
 function ring(x,y,w=14){push({x,y,r:w,a:1,col:"rgba(255,255,255,.95)",type:"ring"})}
 
-/* emojis, lighter with a strict cap */
-const emojis = {
-  food:["🌭","🍟","🥤","🍔"],
-  emoji:["😂","🤯","💥","🚀","😎"],
-  critter:["🐐","🦖","🐕","🦙","🐱"]
-};
+/* emojis with cap */
+const emojis = { food:["🌭","🍟","🥤","🍔"], emoji:["😂","🤯","💥","🚀","😎"], critter:["🐐","🦖","🐕","🦙","🐱"] };
 const EMOJI_PART_LIMIT = 60;
 function emojiCount(){ let n=0; for(const p of parts) if(p.type==="emoji") n++; return n }
 function spawnEmojiRain(kind){
@@ -453,27 +435,20 @@ function sPing(){try{const ac=audio();const o=ac.createOscillator(),g=ac.createG
 
 /* effects and transitions */
 function effectNuke(x,y){ flash(1); camShake(700,28); sNuke();
-  neonPulse(x,y,120, "rgba(45,252,255,.55)");
-  neonPulse(x,y,260, "rgba(255,45,117,.40)");
-  ring(x,y,40); ring(x,y,120);
-  spawnFire(x,y,200); spawnSpark(x,y,"rgba(255,255,255,.98)",120); spawnStreaks(x,y,90); spawnDebris(x,y,50);
+  neonPulse(x,y,120, "rgba(45,252,255,.55)"); neonPulse(x,y,260, "rgba(255,45,117,.40)");
+  ring(x,y,40); ring(x,y,120); spawnFire(x,y,200); spawnSpark(x,y,"rgba(255,255,255,.98)",120); spawnStreaks(x,y,90); spawnDebris(x,y,50);
 }
 function effectNeonStorm(x,y){ flash(.7); camShake(520,22); sBoom();
   lightning(x,y); lightning(x+120,y-40);
   spawnSpark(x,y,"rgba(45,252,255,.98)",120); spawnSpark(x,y,"rgba(255,45,117,.98)",120);
   ring(x,y,28); neonPulse(x,y,220,"rgba(45,252,255,.35)");
 }
-function effectConfettiBurst(x,y){
-  camShake(360,14); sPing(); ring(x,y,18);
-  spawnConfetti(x,y,28);
-  spawnSpark(x,y,"rgba(255,255,255,.95)",40);
-}
+function effectConfettiBurst(x,y){ camShake(360,14); sPing(); ring(x,y,18); spawnConfetti(x,y,28); spawnSpark(x,y,"rgba(255,255,255,.95)",40) }
 function effectShockwave(x,y){ flash(.6); camShake(480,20); sBoom(); ring(x,y,36); spawnFire(x,y,140) }
 function effectStreakCascade(x,y){ camShake(360,16); sPing(); spawnStreaks(x,y,100); ring(x,y,18) }
 function effectDebrisBlast(x,y){ camShake(520,22); sBoom(); spawnDebris(x,y,100); spawnSpark(x,y,"rgba(255,255,255,.95)",70); ring(x,y,26) }
 const EFFECTS=[effectNuke,effectNeonStorm,effectConfettiBurst,effectShockwave,effectStreakCascade,effectDebrisBlast];
 const pickEffect = makeSampler(EFFECTS.map((_,i)=>i));
-
 const pickTransition = makeSampler(["slice","ripple","blur"]);
 function transitionNext(type, done){
   const ov = document.getElementById("overlay"); ov.innerHTML = "";
@@ -488,12 +463,10 @@ function transitionNext(type, done){
     setTimeout(()=>{ done(); cam.style.filter=old }, 260);
   }
 }
+const pickGag = makeSampler(["fx","gag","fx","fx","gag"]);
+const pickEmojiSet = makeSampler(["food","emoji","critter"]);
 
-/* either FX or emoji gag, not both */
-const pickGag = makeSampler(["food","emoji","critter"]);
-const pickCelebrate = makeSampler(["fx","gag","fx","fx","gag"]);
-
-/* flow */
+/* timer and flow */
 function setTimer(sec){limit=sec; left=sec; clearInterval(timer); fill.style.width="100%"; timer=setInterval(()=>{left=Math.max(0,left-1); fill.style.width=Math.round(100*left/limit)+"%"; if(left<=0){clearInterval(timer); reveal("")}},1000)}
 
 async function load(){
@@ -524,9 +497,9 @@ function reveal(L,q,btn){
     score+=pts; scoreEl.textContent=score;
 
     let x=innerWidth*.5,y=150; if(btn){const r=btn.getBoundingClientRect(); x=r.left+r.width*.5; y=r.top+r.height*.5}
-    const mode = pickCelebrate();
+    const mode = pickGag();
     if(mode==="fx"){ const fxIndex = pickEffect(); EFFECTS[fxIndex](x,y); }
-    else { spawnEmojiRain(pickGag()); }
+    else { spawnEmojiRain(pickEmojiSet()); }
     transitionNext(pickTransition(), next);
   }else{
     if(!tried.has(L)) tried.add(L);
@@ -537,15 +510,62 @@ function reveal(L,q,btn){
 }
 function finish(){ clearInterval(timer); setLocked(true); finalEl.textContent=score; document.getElementById("done").style.display="block"; renderLB() }
 
-/* local leaderboard */
-const LB_KEY="unhinged_lb";
-function getLB(){ try{return JSON.parse(localStorage.getItem(LB_KEY)||"[]")}catch(_){return[]} }
-function setLB(a){ localStorage.setItem(LB_KEY, JSON.stringify(a.slice(0,20))) }
-function addLB(name,score){ const a=getLB(); a.push({name,score,ts:Date.now()}); a.sort((x,y)=>y.score-x.score); setLB(a); renderLB() }
-function renderLB(){ const tbody=document.querySelector("#lb tbody"); tbody.innerHTML=""; getLB().slice(0,10).forEach((r,idx)=>{ const d=new Date(r.ts).toLocaleDateString(); const tr=document.createElement("tr"); tr.innerHTML=`<td>${idx+1}</td><td>${escapeHtml(r.name||"Player")}</td><td>${r.score}</td><td>${d}</td>`; tbody.appendChild(tr) }) }
+/* tiny util for LB */
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
-document.getElementById("saveScore").onclick=()=>{const n=document.getElementById("name").value.trim()||"Player"; addLB(n,score)};
-document.getElementById("clearLB").onclick=()=>{localStorage.removeItem(LB_KEY); renderLB()};
+function toB64(s){ return btoa(unescape(encodeURIComponent(s))) }
+function escapeCsv(s){ return `"${String(s).replace(/"/g,'""')}"` }
+
+/* remote leaderboard in repo */
+async function getRemoteLB(){
+  try{
+    const txt = await fetch(LB_CSV_URL, {cache:"no-store"}).then(r => r.ok ? r.text() : "name,score,ts\n");
+    const rows = parseCSV(txt);
+    return rows.map(r => ({ name: r.name || "Player", score: +r.score || 0, ts: +r.ts || 0 }));
+  }catch(_){ return [] }
+}
+async function saveRemoteLB(rows){
+  const head = "name,score,ts\n";
+  const body = rows.map(r => `${escapeCsv(r.name)},${r.score},${r.ts}`).join("\n");
+  const content = head + body + "\n";
+  const payload = {
+    owner: "Grouchy-Lawn-Chair",
+    repo: "TriviaTrivia",
+    branch: "main",
+    message: "update leaderboard",
+    files: [{ path: "leaderboard.csv", content_b64: toB64(content) }]
+  };
+  const res = await fetch(`${WORKER_URL}/commit?token=${encodeURIComponent(SHARED_TOKEN)}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  }).then(r=>r.json());
+  if (!res.ok) throw new Error(res.error || "commit failed");
+}
+async function addLB(name, scoreVal){
+  const rows = await getRemoteLB();
+  rows.push({ name, score: scoreVal, ts: Date.now() });
+  rows.sort((a,b) => b.score - a.score);
+  await saveRemoteLB(rows.slice(0,100));
+  await renderLB();
+}
+async function renderLB(){
+  const rows = await getRemoteLB();
+  const tbody = document.querySelector("#lb tbody");
+  tbody.innerHTML = "";
+  rows.slice(0,10).forEach((r,idx) => {
+    const tr = document.createElement("tr");
+    const d  = r.ts ? new Date(r.ts).toLocaleDateString() : "";
+    tr.innerHTML = `<td>${idx+1}</td><td>${escapeHtml(r.name)}</td><td>${r.score}</td><td>${d}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+document.getElementById("saveScore").onclick = async () => {
+  const n = document.getElementById("name").value.trim() || "Player";
+  try{ await addLB(n, score) }catch(e){ alert("Save failed, " + e.message) }
+};
+document.getElementById("clearLB").onclick = async () => {
+  try{ await saveRemoteLB([]); await renderLB() }catch(e){ alert("Clear failed, " + e.message) }
+};
 
 /* start */
 load();
