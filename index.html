@@ -63,9 +63,14 @@
   canvas{position:fixed;inset:0;pointer-events:none;z-index:0}
   #fx2{position:fixed;inset:0;pointer-events:none;z-index:0}
   #flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:3}
+#vanta{position:fixed; inset:0; z-index:0}
+#tsparticles{position:fixed; inset:0; z-index:0; pointer-events:none}
+
 </style>
 
 <body class="fx">
+	<div id="vanta"></div>
+<div id="tsparticles"></div>
   <div id="flash"></div>
   <canvas id="fx"></canvas>
   <canvas id="fx2"></canvas>
@@ -98,6 +103,14 @@
     </div>
   </div>
 
+	<script defer src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+<script defer src="https://unpkg.com/vanta/dist/vanta.fog.min.js"></script>
+<script defer src="https://unpkg.com/vanta/dist/vanta.waves.min.js"></script>
+<script defer src="https://unpkg.com/vanta/dist/vanta.halo.min.js"></script>
+<script defer src="https://unpkg.com/vanta/dist/vanta.net.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/tsparticles@3/tsparticles.bundle.min.js"></script>
+
+	
 <script>
 /* tuning */
 const FX = { scale: 18, shake: 1.6 }; // scale makes everything bigger, shake controls camera strength
@@ -110,6 +123,31 @@ const idxEl = $("#idx"), scoreEl = $("#score"), finalEl = $("#final");
 const fill = $("#fill"), flashEl = $("#flash");
 let Q = [], i = 0, score = 0, tried = new Set(), answered = false, limit = 20, left = 0, timer = 0;
 
+<script>
+/* add this right after your let Q = [], i = 0, ... line */
+const vKinds = [
+  opts => VANTA.FOG(opts),
+  opts => VANTA.WAVES(opts),
+  opts => VANTA.HALO(opts),
+  opts => VANTA.NET(opts),
+];
+let vIdx = 0, vEffect = null;
+function setVantaNext(){
+  try{ vEffect && vEffect.destroy && vEffect.destroy() }catch(_){}
+  const init = vKinds[vIdx % vKinds.length];
+  vEffect = init({
+    el: "#vanta",
+    mouseControls: true,
+    touchControls: true,
+    gyroControls: false,
+    color: 0x2dfcff,
+    backgroundColor: 0x090b1a
+  });
+  vIdx = (vIdx + 1) % vKinds.length;
+}
+</script>
+	
+	
 /* canvases */
 const c = document.getElementById("fx"), ctx = c.getContext("2d");
 let W,H,parts=[]; function resize(){W=c.width=innerWidth;H=c.height=innerHeight} addEventListener("resize",resize); resize();
@@ -224,8 +262,8 @@ function setTimer(sec){limit=sec; left=sec; clearInterval(timer); fill.style.wid
 function setLocked(on){wrap.classList.toggle("locked",on); answered=on}
 
 /* flow */
-async function load(){try{const t=await fetch(CSV_URL,{cache:"no-store"}).then(r=>r.text()); Q=shuffle(parseCSV(t)); if(!Q.length) throw Error("no questions"); i=0; score=0; scoreEl.textContent=score; next()}catch(e){ qEl.textContent="Load failed, "+e }}
-function next(){ if(i>=Q.length) return finish(); const q=Q[i++]; idxEl.textContent=i+"/"+Q.length; qEl.textContent=q.question; tried.clear(); setLocked(false); setTimer(q.timeLimit); optsEl.innerHTML=""; ["A","B","C","D"].forEach(L=>{const txt=q["option"+L]; if(!txt) return; const b=document.createElement("button"); b.className="opt"; b.textContent=L+") "+txt; b.onclick=()=>reveal(L,q,b); optsEl.appendChild(b) })}
+async function load(){try{const t=await fetch(CSV_URL,{cache:"no-store"}).then(r=>r.text()); Q=shuffle(parseCSV(t)); if(!Q.length) throw Error("no questions"); i=0; score=0; scoreEl.textContent=score; setVantaNext(); next()}catch(e){ qEl.textContent="Load failed, "+e }}
+function next(){ if(i>0) setVantaNext(); if(i>=Q.length) return finish(); const q=Q[i++]; idxEl.textContent=i+"/"+Q.length; qEl.textContent=q.question; tried.clear(); setLocked(false); setTimer(q.timeLimit); optsEl.innerHTML=""; ["A","B","C","D"].forEach(L=>{const txt=q["option"+L]; if(!txt) return; const b=document.createElement("button"); b.className="opt"; b.textContent=L+") "+txt; b.onclick=()=>reveal(L,q,b); optsEl.appendChild(b) })}
 
 /* big effects */
 function effectNuke(x,y){ // full screen neon nuke
