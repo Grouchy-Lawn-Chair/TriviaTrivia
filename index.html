@@ -6,8 +6,9 @@
 <style>
   :root{
     --fg:#fff; --accent:#2dfcff; --hot:#ff2d75;
-    --box-bg: rgba(0,0,0,.82);
-    --box-bg-hover: rgba(0,0,0,.9);
+    --box-bg: rgba(0,0,0,.86);
+    --box-bg-hover: rgba(0,0,0,.94);
+    --glass: rgba(0,0,0,.12);
   }
   *{box-sizing:border-box}
   html,body{height:100%}
@@ -31,8 +32,39 @@
   #flash{position:fixed; inset:0; background:#fff; opacity:0; z-index:4; pointer-events:none}
   #overlay{position:fixed; inset:0; z-index:5; pointer-events:none}
 
+  /* app frame */
   #cam{position:relative; z-index:6; transform-origin:50% 35%}
-  #wrap{max-width:1100px; margin:34px auto; padding:16px}
+  #wrap{max-width:1100px; margin:34px auto; padding:16px 24px}
+  @media (min-width: 1200px){
+    /* leave space for the right sidebar */
+    #wrap{margin-right:360px}
+  }
+
+  /* always on leaderboard panel */
+  #lbPanel{
+    position:fixed; top:10px; right:10px; width:320px; z-index:7;
+    background:rgba(10,12,20,.75); border:1px solid #ffffff22; border-radius:16px;
+    box-shadow:0 10px 30px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.04);
+    backdrop-filter: blur(6px);
+    display:flex; flex-direction:column;
+  }
+  #lbHead{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px 12px; border-bottom:1px solid #ffffff18; font-weight:700
+  }
+  #lbBody{max-height:52vh; overflow:auto}
+  #lbBody table{width:100%; border-collapse:collapse}
+  #lbBody th, #lbBody td{padding:8px 10px; border-bottom:1px solid #ffffff18; text-align:left; font-size:14px}
+  #lbFoot{padding:6px 10px; font-size:12px; opacity:.8}
+
+  .hl{background:linear-gradient(90deg, rgba(45,252,255,.2), rgba(255,45,117,.15)); animation:hl 1.2s ease 2}
+  @keyframes hl{0%{box-shadow:0 0 0 rgba(0,0,0,0)}50%{box-shadow:0 0 22px rgba(45,252,255,.35)}100%{box-shadow:0 0 0 rgba(0,0,0,0)}}
+
+  @media (max-width: 900px){
+    #lbPanel{left:10px; right:10px; width:auto; bottom:10px; top:auto}
+    #lbBody{max-height:36vh}
+    #wrap{margin-right:0}
+  }
 
   .outline{
     text-shadow:
@@ -44,23 +76,12 @@
   h1{margin:0 0 12px; font-size:48px; letter-spacing:.5px; display:inline-block; position:relative}
   #title{filter:drop-shadow(0 0 16px rgba(45,252,255,.6)) drop-shadow(0 0 10px rgba(255,45,117,.35))}
 
-  /* existing micro effects, still used by the scheduler */
+  /* rotating title effects */
   .tPulse{animation:glowPulse 2s ease infinite}
   .tTilt{animation:tilt 1.8s ease infinite}
   .tHue{animation:hue 14s linear infinite}
   .tFade{animation:fade 12s ease-in-out infinite}
   .tFlick{animation:flicker 1.2s linear infinite}
-
-  @keyframes glowPulse{
-    0%,100%{filter:drop-shadow(0 0 10px rgba(45,252,255,.40)) drop-shadow(0 0 6px rgba(255,45,117,.25))}
-    50%{filter:drop-shadow(0 0 34px rgba(45,252,255,.90)) drop-shadow(0 0 20px rgba(255,45,117,.55))}
-  }
-  @keyframes tilt{0%{transform:rotate(0)}50%{transform:rotate(1deg)}100%{transform:rotate(0)}}
-  @keyframes hue{0%{filter:hue-rotate(0)}100%{filter:hue-rotate(360deg)}}
-  @keyframes fade{0%,100%{opacity:1}50%{opacity:.75}}
-  @keyframes flicker{0%,19%,21%,23%,25%,54%,56%,100%{opacity:1}20%,24%,55%{opacity:.6}}
-
-  /* glitch effect */
   .tGlitch{
     text-shadow:
       1px 0 rgba(255,0,255,.9),
@@ -69,28 +90,14 @@
       0 0 10px rgba(255,45,117,.35);
     animation:glitchShift .9s steps(2,end) infinite;
   }
-  @keyframes glitchShift{
-    0%{transform:translate(0,0)}
-    20%{transform:translate(1px,-1px)}
-    40%{transform:translate(-1px,1px)}
-    60%{transform:translate(1px,0)}
-    80%{transform:translate(-1px,0)}
-    100%{transform:translate(0,0)}
-  }
-
-  /* blocky pixel grid overlay to fake pixelation */
   .tBlocky{ filter:contrast(120%) saturate(115%) }
   .tBlocky::after{
     content:""; position:absolute; inset:-6px; pointer-events:none;
     background:
       repeating-linear-gradient(0deg, rgba(255,255,255,.06), rgba(255,255,255,.06) 2px, transparent 2px, transparent 4px),
       repeating-linear-gradient(90deg, rgba(255,255,255,.06), rgba(255,255,255,.06) 2px, transparent 2px, transparent 4px);
-    mix-blend-mode:screen; opacity:.25;
-    animation:blocky 1s steps(2,end) infinite;
+    mix-blend-mode:screen; opacity:.25; animation:blocky 1s steps(2,end) infinite;
   }
-  @keyframes blocky{0%,100%{transform:translate(0,0)}50%{transform:translate(1px,0)}}
-
-  /* neon inner pulse by stacking shadows tighter */
   .tInnerNeon{
     text-shadow:
       0 0 2px rgba(255,255,255,1),
@@ -100,23 +107,44 @@
       0 0 22px rgba(255,45,117,.35);
     animation:innerNeon 6s ease-in-out infinite;
   }
+  @keyframes glowPulse{0%,100%{filter:drop-shadow(0 0 10px rgba(45,252,255,.40)) drop-shadow(0 0 6px rgba(255,45,117,.25))}50%{filter:drop-shadow(0 0 34px rgba(45,252,255,.90)) drop-shadow(0 0 20px rgba(255,45,117,.55))}}
+  @keyframes tilt{0%{transform:rotate(0)}50%{transform:rotate(1deg)}100%{transform:rotate(0)}}
+  @keyframes hue{0%{filter:hue-rotate(0)}100%{filter:hue-rotate(360deg)}}
+  @keyframes fade{0%,100%{opacity:1}50%{opacity:.75}}
+  @keyframes flicker{0%,19%,21%,23%,25%,54%,56%,100%{opacity:1}20%,24%,55%{opacity:.6}}
+  @keyframes glitchShift{0%{transform:translate(0,0)}20%{transform:translate(1px,-1px)}40%{transform:translate(-1px,1px)}60%{transform:translate(1px,0)}80%{transform:translate(-1px,0)}100%{transform:translate(0,0)}}
+  @keyframes blocky{0%,100%{transform:translate(0,0)}50%{transform:translate(1px,0)}}
   @keyframes innerNeon{0%,100%{filter:brightness(1)}50%{filter:brightness(1.2)}}
 
-  #hud{display:flex;align-items:center;gap:10px;margin:8px 0 14px;opacity:.98}
+  #hud{display:none; align-items:center;gap:10px;margin:8px 0 14px;opacity:.98}
   #bar{position:relative;height:14px;flex:1;background:#00000070;border-radius:999px;overflow:hidden}
   #fill{position:absolute;inset:0;width:100%;background:linear-gradient(90deg,var(--hot),var(--accent))}
-  #q{font-size:32px;margin:18px 0 12px}
+  #q{display:none; font-size:32px;margin:18px 0 12px}
 
   .opt{
-    display:block;width:100%;text-align:left;margin:10px 0;padding:16px 18px;border-radius:16px;
-    border:1px solid #ffffff30;color:var(--fg);background:var(--box-bg);backdrop-filter:blur(2px);
-    cursor:pointer;font-weight:800;transition:transform .06s ease,background .15s ease,border-color .15s ease, box-shadow .15s ease;
+    display:none; width:100%; text-align:left; margin:10px 0; padding:16px 18px; border-radius:16px;
+    border:1px solid #ffffff30; color:var(--fg); background:var(--box-bg); backdrop-filter:blur(2px);
+    cursor:pointer; font-weight:800; transition:transform .06s ease,background .15s ease,border-color .15s ease, box-shadow .15s ease;
     box-shadow: 0 8px 24px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.04);
   }
   .opt:hover{transform:translateY(-1px);background:var(--box-bg-hover)}
   .opt.ok{background:#134323;border-color:#2fff8f;box-shadow:0 0 36px rgba(46,255,143,.35)}
   .opt.no{background:#441425;border-color:#ff5b8b;box-shadow:0 0 36px rgba(255,91,139,.34)}
   .locked .opt{pointer-events:none;opacity:.95}
+
+  /* start screen */
+  #start{
+    display:flex; align-items:center; justify-content:center;
+    margin:28px 0 10px; padding:18px; border-radius:16px;
+    background:linear-gradient(135deg, rgba(45,252,255,.10), rgba(255,45,117,.10));
+    border:1px solid #ffffff22;
+  }
+  #startBtn{
+    padding:14px 18px; font-weight:900; font-size:18px; border-radius:12px; cursor:pointer;
+    color:#001; background:linear-gradient(135deg,#2dfcff,#ff2d75); border:none;
+    box-shadow:0 10px 30px rgba(0,0,0,.5);
+  }
+  #startBtn:hover{filter:brightness(1.05)}
 
   .shake{animation:shake .65s cubic-bezier(.36,.07,.19,.97)}
   @keyframes shake{
@@ -132,8 +160,6 @@
   }
 
   #done{display:none;margin-top:22px}
-  table{width:100%;border-collapse:collapse;margin-top:8px}
-  th,td{padding:8px 10px;border-bottom:1px solid #ffffff22;text-align:left}
   input[type="text"]{background:#ffffff14;border:1px solid #ffffff33;color:var(--fg);padding:10px;border-radius:10px}
   .btn{display:inline-block;margin:8px 6px 0 0;padding:10px 12px;border-radius:10px;border:1px solid #ffffff38;background:#ffffff18;color:var(--fg);cursor:pointer}
   .btn:hover{background:#ffffff22}
@@ -154,16 +180,27 @@
 <body>
   <canvas id="bg"></canvas>
   <div id="shade"></div>
-
   <canvas id="fx"></canvas>
   <canvas id="fx2"></canvas>
-
   <div id="flash"></div>
   <div id="overlay"></div>
+
+  <!-- Always visible leaderboard -->
+  <aside id="lbPanel" aria-live="polite">
+    <div id="lbHead"><span>Leaderboard</span><button id="lbRefresh" class="btn" style="margin:0;padding:6px 10px">Refresh</button></div>
+    <div id="lbBody">
+      <table id="lb"><thead><tr><th>#</th><th>Name</th><th>Score</th><th>Date</th></tr></thead><tbody></tbody></table>
+    </div>
+    <div id="lbFoot"><small>Shared via leaderboard.csv</small></div>
+  </aside>
 
   <div id="cam">
     <div id="wrap">
       <h1 id="title" class="outline">Unhinged Trivia</h1>
+
+      <div id="start">
+        <button id="startBtn">Start Game</button>
+      </div>
 
       <div id="hud" class="outline">
         <div>Score <b id="score">0</b></div><div>•</div><div>Q <b id="idx">0</b></div>
@@ -176,13 +213,10 @@
       <div id="done">
         <h2 class="outline">Done</h2>
         <p class="outline">Total <b id="final">0</b></p>
-        <div id="lbWrap">
-          <div style="margin:6px 0 10px">
-            <input id="name" type="text" placeholder="Your name" maxlength="24">
-            <button class="btn" id="saveScore">Save score</button>
-          </div>
-          <table id="lb"><thead><tr><th>#</th><th>Name</th><th>Score</th><th>Date</th></tr></thead><tbody></tbody></table>
-          <small>Leaderboard is shared from the repo</small>
+        <div style="margin:6px 0 10px">
+          <input id="name" type="text" placeholder="Your name" maxlength="24">
+          <button class="btn" id="saveScore">Save score</button>
+          <button class="btn" id="again">Play again</button>
         </div>
       </div>
     </div>
@@ -196,10 +230,13 @@ const SHARED_TOKEN= "superlong123random987";
 const LB_CSV_URL  = "https://raw.githubusercontent.com/Grouchy-Lawn-Chair/TriviaTrivia/main/leaderboard.csv";
 
 /* state */
-const $  = s => document.querySelector(s);
-const cam = $("#cam"), title = $("#title"), wrap = $("#wrap"), qEl = $("#q"), optsEl = $("#opts");
-const idxEl = $("#idx"), scoreEl = $("#score"), finalEl = $("#final"), fill = $("#fill"), flashEl = $("#flash");
-let Q = [], i = 0, score = 0, tried = new Set(), answered = false, limit = 20, left = 0, timer = 0;
+const $ = s => document.querySelector(s);
+const cam = $("#cam"), title = $("#title"), wrap = $("#wrap"),
+      qEl = $("#q"), optsEl = $("#opts"), hud = $("#hud"),
+      idxEl = $("#idx"), scoreEl = $("#score"), finalEl = $("#final"),
+      fill = $("#fill"), flashEl = $("#flash"),
+      startBox = $("#start"), startBtn = $("#startBtn");
+let Q = [], i = 0, score = 0, tried = new Set(), answered = false, limit = 20, left = 0, timer = 0, gameOn = false;
 
 /* helpers */
 function shuffle(a){for(let j=a.length-1;j>0;j--){const k=Math.floor(Math.random()*(j+1));[a[j],a[k]]=[a[k],a[j]]}return a}
@@ -226,7 +263,7 @@ function parseCSV(txt){
   });
 }
 
-/* title effects scheduler, each effect max 20s */
+/* title effects rotation, 6 to 20 seconds each */
 const TITLE_CLASSES = ["tPulse","tTilt","tHue","tFade","tFlick","tGlitch","tBlocky","tInnerNeon"];
 let currentTitleClass = null, titleTimer = null;
 function applyTitleClass(cls){
@@ -237,7 +274,7 @@ function applyTitleClass(cls){
 function scheduleNextTitleEffect(){
   const next = TITLE_CLASSES[Math.floor(Math.random()*TITLE_CLASSES.length)];
   applyTitleClass(next);
-  const duration = 6000 + Math.random()*14000; // 6s to 20s
+  const duration = 6000 + Math.random()*14000;
   clearTimeout(titleTimer);
   titleTimer = setTimeout(scheduleNextTitleEffect, duration);
 }
@@ -279,8 +316,7 @@ function bgTriangles(){
 }
 function bgWaves(){
   return (t)=>{
-    bctx.clearRect(0,0,BW,BH);
-    bctx.globalCompositeOperation = "screen";
+    bctx.clearRect(0,0,BW,BH); bctx.globalCompositeOperation = "screen";
     for(let k=0;k<12;k++){
       const y = (k/12)*BH;
       const a = 0.18 + 0.10*Math.sin(t*.001+k);
@@ -309,8 +345,7 @@ function bgWaves(){
 }
 function bgHalo(){
   return (t)=>{
-    bctx.clearRect(0,0,BW,BH);
-    bctx.globalCompositeOperation = "screen";
+    bctx.clearRect(0,0,BW,BH); bctx.globalCompositeOperation = "screen";
     const cx=BW*0.5, cy=BH*0.45, R=360+Math.sin(t*0.002)*110;
     const g=bctx.createRadialGradient(cx,cy,0,cx,cy,R);
     g.addColorStop(0,"rgba(45,252,255,.58)");
@@ -321,8 +356,7 @@ function bgHalo(){
 }
 function bgNet(){
   return (t)=>{
-    bctx.clearRect(0,0,BW,BH);
-    bctx.globalCompositeOperation = "screen";
+    bctx.clearRect(0,0,BW,BH); bctx.globalCompositeOperation = "screen";
     const s = 60, off = (t*.06)%s;
     bctx.globalAlpha=.20; bctx.strokeStyle="#2dfcff";
     for(let x=-s+off;x<BW;x+=s){ bctx.beginPath(); bctx.moveTo(x,0); bctx.lineTo(x,BH); bctx.stroke() }
@@ -493,20 +527,31 @@ function sNuke(){try{const ac=audio(); const g=ac.createGain(); g.gain.value=.28
   o.start(); n.start(); o.stop(ac.currentTime+1.2);}catch(_){}} 
 function sBuzz(){try{const ac=audio();const o=ac.createOscillator(),g=ac.createGain();o.type="square";o.frequency.value=140;g.gain.value=.12;o.connect(g);g.connect(ac.destination);o.start();g.gain.exponentialRampToValueAtTime(0.0001,ac.currentTime+.24);o.stop(ac.currentTime+.24)}catch(_){}} 
 function sPing(){try{const ac=audio();const o=ac.createOscillator(),g=ac.createGain();o.type="triangle";o.frequency.setValueAtTime(800,ac.currentTime);o.frequency.exponentialRampToValueAtTime(1600,ac.currentTime+.12);g.gain.value=.08;o.connect(g);g.connect(ac.destination);o.start();g.gain.exponentialRampToValueAtTime(0.0001,ac.currentTime+.25);o.stop(ac.currentTime+.25)}catch(_){}}
+/* extra sfx to match effects */
+function sZap(){try{const ac=audio(); const g=ac.createGain(); g.gain.value=.12; const bp=ac.createBiquadFilter(); bp.type="bandpass"; bp.frequency.value=1800; bp.Q.value=4; g.connect(ac.destination); bp.connect(g);
+  const n=ac.createBufferSource(); const b=ac.createBuffer(1,ac.sampleRate*.2,ac.sampleRate); const ch=b.getChannelData(0);
+  for(let i=0;i<ch.length;i++){ ch[i]=(Math.random()*2-1)*(1-i/ch.length) } n.buffer=b; n.connect(bp); g.gain.exponentialRampToValueAtTime(0.0001,ac.currentTime+.22); n.start(); }catch(_){}} 
+function sWhoosh(){try{const ac=audio(); const g=ac.createGain(); g.gain.value=.14; g.connect(ac.destination);
+  const n=ac.createBufferSource(); const b=ac.createBuffer(1,ac.sampleRate*.5,ac.sampleRate); const ch=b.getChannelData(0);
+  for(let i=0;i<ch.length;i++){ const t=i/ch.length; ch[i]=(Math.random()*2-1)*(1-t) } n.buffer=b; const lp=ac.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value=1200; n.connect(lp); lp.connect(g);
+  g.gain.exponentialRampToValueAtTime(0.0001,ac.currentTime+.5); n.start(); }catch(_){}} 
+function sPop(){try{const ac=audio(); const g=ac.createGain(); g.gain.value=.12; g.connect(ac.destination);
+  const o=ac.createOscillator(); o.type="square"; o.frequency.setValueAtTime(600,ac.currentTime); o.frequency.exponentialRampToValueAtTime(80,ac.currentTime+.12); o.connect(g);
+  g.gain.exponentialRampToValueAtTime(0.0001,ac.currentTime+.14); o.start(); o.stop(ac.currentTime+.14);}catch(_){}} 
 
-/* effects and transitions */
+/* effects and transitions with mapped sounds */
 function effectNuke(x,y){ flash(1); camShake(700,28); sNuke();
   neonPulse(x,y,120, "rgba(45,252,255,.55)"); neonPulse(x,y,260, "rgba(255,45,117,.40)");
   ring(x,y,40); ring(x,y,120); spawnFire(x,y,200); spawnSpark(x,y,"rgba(255,255,255,.98)",120); spawnStreaks(x,y,90); spawnDebris(x,y,50);
 }
-function effectNeonStorm(x,y){ flash(.7); camShake(520,22); sBoom();
+function effectNeonStorm(x,y){ flash(.7); camShake(520,22); sZap();
   lightning(x,y); lightning(x+120,y-40);
   spawnSpark(x,y,"rgba(45,252,255,.98)",120); spawnSpark(x,y,"rgba(255,45,117,.98)",120);
   ring(x,y,28); neonPulse(x,y,220,"rgba(45,252,255,.35)");
 }
-function effectConfettiBurst(x,y){ camShake(360,14); sPing(); ring(x,y,18); spawnConfetti(x,y,28); spawnSpark(x,y,"rgba(255,255,255,.95)",40) }
+function effectConfettiBurst(x,y){ camShake(360,14); sPop(); ring(x,y,18); spawnConfetti(x,y,28); spawnSpark(x,y,"rgba(255,255,255,.95)",40) }
 function effectShockwave(x,y){ flash(.6); camShake(480,20); sBoom(); ring(x,y,36); spawnFire(x,y,140) }
-function effectStreakCascade(x,y){ camShake(360,16); sPing(); spawnStreaks(x,y,100); ring(x,y,18) }
+function effectStreakCascade(x,y){ camShake(360,16); sWhoosh(); spawnStreaks(x,y,100); ring(x,y,18) }
 function effectDebrisBlast(x,y){ camShake(520,22); sBoom(); spawnDebris(x,y,100); spawnSpark(x,y,"rgba(255,255,255,.95)",70); ring(x,y,26) }
 const EFFECTS=[effectNuke,effectNeonStorm,effectConfettiBurst,effectShockwave,effectStreakCascade,effectDebrisBlast];
 const pickEffect = makeSampler(EFFECTS.map((_,i)=>i));
@@ -524,19 +569,31 @@ function transitionNext(type, done){
     setTimeout(()=>{ done(); cam.style.filter=old }, 260);
   }
 }
-const pickGag = makeSampler(["fx","gag","fx","fx","gag"]);
-const pickEmojiSet = makeSampler(["food","emoji","critter"]);
 
 /* timer and flow */
 function setTimer(sec){limit=sec; left=sec; clearInterval(timer); fill.style.width="100%"; timer=setInterval(()=>{left=Math.max(0,left-1); fill.style.width=Math.round(100*left/limit)+"%"; if(left<=0){clearInterval(timer); reveal("")}},1000)}
 
-async function load(){
-  try{
-    const t=await fetch(CSV_URL,{cache:"no-store"}).then(r=>r.text());
-    Q=shuffle(parseCSV(t)); if(!Q.length) throw Error("no questions");
-    i=0; score=0; scoreEl.textContent=score; setBgNext(); next();
-  }catch(e){ qEl.textContent="Load failed, "+e }
+async function fetchQuestions(){
+  const t=await fetch(CSV_URL,{cache:"no-store"}).then(r=>r.text());
+  const rows = parseCSV(t);
+  Q = shuffle(rows);
 }
+function showGameUI(show){
+  hud.style.display = show ? "flex" : "none";
+  qEl.style.display = show ? "block" : "none";
+  document.querySelectorAll(".opt").forEach(b=>b.style.display = show ? "block" : "none");
+}
+async function startGame(){
+  if(gameOn) return;
+  gameOn = true;
+  startBox.style.display="none";
+  showGameUI(true);
+  i=0; score=0; scoreEl.textContent=score; setBgNext();
+  if(!Q.length){ try{ await fetchQuestions() }catch(e){ qEl.textContent="Load failed, "+e; return } }
+  next();
+}
+startBtn.onclick = ()=>{ sPing(); startGame() };
+
 function next(){
   if(i>0) setBgNext();
   if(i>=Q.length) return finish();
@@ -546,6 +603,7 @@ function next(){
   ["A","B","C","D"].forEach(L=>{
     const txt=q["option"+L]; if(!txt) return;
     const b=document.createElement("button"); b.className="opt"; b.textContent=L+") "+txt;
+    b.style.display="block";
     b.onclick=()=>reveal(L,q,b); optsEl.appendChild(b);
   });
 }
@@ -558,9 +616,7 @@ function reveal(L,q,btn){
     score+=pts; scoreEl.textContent=score;
 
     let x=innerWidth*.5,y=150; if(btn){const r=btn.getBoundingClientRect(); x=r.left+r.width*.5; y=r.top+r.height*.5}
-    const mode = pickGag();
-    if(mode==="fx"){ const fxIndex = pickEffect(); EFFECTS[fxIndex](x,y); }
-    else { spawnEmojiRain(pickEmojiSet()); }
+    const fxIndex = pickEffect(); EFFECTS[fxIndex](x,y);
     transitionNext(pickTransition(), next);
   }else{
     if(!tried.has(L)) tried.add(L);
@@ -569,14 +625,13 @@ function reveal(L,q,btn){
     sBuzz();
   }
 }
-function finish(){ clearInterval(timer); setLocked(true); finalEl.textContent=score; document.getElementById("done").style.display="block"; renderLB() }
+function finish(){ clearInterval(timer); setLocked(true); finalEl.textContent=score; document.getElementById("done").style.display="block" }
 
-/* leaderboard helpers */
+/* leaderboard, always visible */
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
 function toB64(s){ return btoa(unescape(encodeURIComponent(s))) }
 function escapeCsv(s){ return `"${String(s).replace(/"/g,'""')}"` }
 
-/* remote leaderboard */
 async function getRemoteLB(){
   try{
     const txt = await fetch(LB_CSV_URL, {cache:"no-store"}).then(r => r.ok ? r.text() : "name,score,ts\n");
@@ -602,14 +657,7 @@ async function saveRemoteLB(rows){
   }).then(r=>r.json());
   if (!res.ok) throw new Error(res.error || "commit failed");
 }
-async function addLB(name, scoreVal){
-  const rows = await getRemoteLB();
-  rows.push({ name, score: scoreVal, ts: Date.now() });
-  rows.sort((a,b) => b.score - a.score);
-  await saveRemoteLB(rows.slice(0,100));
-  await renderLB();
-}
-async function renderLB(){
+async function renderLB(highlight){
   const rows = await getRemoteLB();
   const tbody = document.querySelector("#lb tbody");
   tbody.innerHTML = "";
@@ -617,17 +665,52 @@ async function renderLB(){
     const tr = document.createElement("tr");
     const d  = r.ts ? new Date(r.ts).toLocaleDateString() : "";
     tr.innerHTML = `<td>${idx+1}</td><td>${escapeHtml(r.name)}</td><td>${r.score}</td><td>${d}</td>`;
+    if(highlight && highlight.name===r.name && highlight.score===r.score && highlight.ts===r.ts){
+      tr.classList.add("hl");
+      // scroll into view inside panel
+      setTimeout(()=>{ tr.scrollIntoView({block:"nearest"}) }, 50);
+    }
     tbody.appendChild(tr);
   });
 }
+$("#lbRefresh").onclick = ()=>renderLB();
+
+/* add score, refresh and highlight the new row */
+async function addLB(name, scoreVal){
+  const rows = await getRemoteLB();
+  const newRow = { name, score: scoreVal, ts: Date.now() };
+  rows.push(newRow);
+  rows.sort((a,b) => b.score - a.score);
+  await saveRemoteLB(rows.slice(0,100));
+  await renderLB(newRow);
+}
+
+/* buttons */
 document.getElementById("saveScore").onclick = async () => {
   const n = document.getElementById("name").value.trim() || "Player";
-  try{ await addLB(n, score) }catch(e){ alert("Save failed, " + e.message) }
+  try{
+    await addLB(n, score);
+    sPing();
+  }catch(e){
+    alert("Save failed, " + e.message);
+  }
+};
+document.getElementById("again").onclick = ()=>{
+  document.getElementById("done").style.display="none";
+  startBox.style.display="flex";
+  showGameUI(false);
+  gameOn = false;
+  sPing();
 };
 
-/* start */
+/* init, but do not auto start game */
 setBgNext();
 scheduleNextTitleEffect();
-load();
+renderLB();
+fetchQuestions().catch(()=>{ /* harmless if it fails here, start will try again */ });
+
+/* background animation loop kick */
+function loopStart(){ requestAnimationFrame(loopBG) }
+loopStart();
 </script>
 </body>
