@@ -1,0 +1,15 @@
+
+<!doctype html><meta charset=utf-8><title>Unhinged Trivia</title>
+<style>body{margin:0;font-family:system-ui;background:#0b0f1a;color:#f8f8ff}#c{max-width:800px;margin:40px auto;padding:16px}h1{margin:0 0 8px}button{display:block;width:100%;margin:8px 0;padding:12px;border-radius:10px;border:1px solid #ffffff30;background:#ffffff10;color:#fff;font-weight:700;text-align:left}#p{height:8px;background:#ffffff20;border-radius:99px;overflow:hidden}#b{height:100%;width:100%;background:linear-gradient(90deg,#ff2d75,#2dfcff)}</style>
+<div id=c><h1>Unhinged Trivia</h1><div>Score <b id=s>0</b> • Q <b id=i>0</b></div><div id=p><div id=b></div></div><h2 id=q>Loading...</h2><div id=o></div>
+<div id=done style=display:none><h2>Done</h2><p>Total <b id=fs>0</b></p></div></div>
+<script>
+const CSV="https://raw.githubusercontent.com/Grouchy-Lawn-Chair/TriviaTrivia/main/questions.csv";
+let Q=[],idx=0,score=0,left=0,timer=0,wrongs=0,limit=20;
+const $=id=>document.getElementById(id);
+function parse(s){let L=s.trim().split(/\r?\n/),H=L.shift().split(",");return L.map((ln,k)=>{let c=ln.split(","),r={};H.forEach((h,i)=>r[h]=c[i]||"");r.qid=r.qid||k+1;r.timeLimit=+r.timeLimit||20;return r;});}
+fetch(CSV,{cache:"no-store"}).then(r=>r.text()).then(t=>{Q=parse(t);next();}).catch(e=>{$("q").textContent="Load failed, "+e});
+function next(){if(idx>=Q.length){end();return}const q=Q[idx++];$("i").textContent=idx+"/"+Q.length;$("q").textContent=q.question;wrongs=0;limit=q.timeLimit;left=limit;clearInterval(timer);$("b").style.width="100%";timer=setInterval(()=>{left--;$("b").style.width=Math.max(0,Math.round(left/limit*100))+"%";if(left<=0){clearInterval(timer);reveal("",q)}},1000);let w=$("o");w.innerHTML="";["A","B","C","D"].forEach(L=>{let t=q["option"+L];if(!t)return;let bt=document.createElement("button");bt.textContent=L+") "+t;bt.onclick=()=>reveal(L,q,bt);w.appendChild(bt);});}
+function reveal(L,q,bt){if(L===q.correct){bt&&bt.classList.add("ok");let pts=Math.max(25,Math.round(1000*(left/limit))-wrongs*100);score+=pts;$("s").textContent=score;setTimeout(next,250);}else{wrongs++;bt&&bt.classList.add("no");}}
+function end(){clearInterval(timer);$("fs").textContent=score;$("done").style.display="block";}
+</script>
