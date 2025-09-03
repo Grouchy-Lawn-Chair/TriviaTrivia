@@ -12,13 +12,12 @@
   html,body{height:100%}
   body{
     margin:0; color:var(--fg);
-    font:16px/1.45 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
     background:
       radial-gradient(1200px 700px at 18% -8%, rgba(45,252,255,.22), transparent 60%),
       radial-gradient(1000px 900px at 115% 15%, rgba(255,45,117,.18), transparent 60%),
       linear-gradient(135deg,var(--bg1),var(--bg2));
-    background-size:140% 140%;
-    animation:drift 26s linear infinite;
+    background-size:140% 140%; animation:drift 26s linear infinite;
     overflow-x:hidden;
   }
   @keyframes drift{
@@ -27,7 +26,7 @@
     100%{background-position:0% 0%}
   }
 
-  /* subtle scan and vignetting for punch */
+  /* scanline + vignette */
   .fx::before,.fx::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:0}
   .fx::before{background:repeating-linear-gradient(transparent,transparent 2px,rgba(255,255,255,.02) 3px);mix-blend-mode:overlay}
   .fx::after{box-shadow:inset 0 0 180px rgba(0,0,0,.65)}
@@ -36,12 +35,9 @@
   #wrap{max-width:1100px;margin:34px auto;padding:16px}
 
   h1{margin:0 0 12px;font-size:46px;letter-spacing:.5px;display:inline-block;position:relative}
-  h1, #q { text-shadow:
-    0 0 12px rgba(45,252,255,.25),
-    0 0 6px rgba(255,45,117,.18),
-    0 1px 0 rgba(0,0,0,.6);
-  }
-  /* title micro effects */
+  h1,#q{text-shadow:0 0 12px rgba(45,252,255,.25),0 0 6px rgba(255,45,117,.18),0 1px 0 rgba(0,0,0,.6)}
+
+  /* title micro fx */
   .tPulse{animation:glowPulse 2s ease}
   .tTilt{animation:tilt .7s ease}
   .tHue{animation:hue 2.8s ease}
@@ -51,9 +47,8 @@
   @keyframes tilt{0%{transform:rotate(0)}50%{transform:rotate(.9deg)}100%{transform:rotate(0)}}
   @keyframes hue{0%{filter:hue-rotate(0)}100%{filter:hue-rotate(25deg)}}
   @keyframes flicker{0%,19%,21%,23%,25%,54%,56%,100%{opacity:1}20%,24%,55%{opacity:.6}}
-  /* faux pixelation via layered shadows and clip jumps */
   @keyframes glitch{
-    0%{text-shadow:1px 0 var(--hot), -1px 0 var(--accent)}
+    0%{text-shadow:1px 0 var(--hot),-1px 0 var(--accent)}
     20%{clip-path:inset(0 0 75% 0);transform:translate(0,0)}
     21%{clip-path:inset(65% 0 0 0);transform:translate(-2px,1px)}
     40%{clip-path:inset(0 0 70% 0);transform:translate(2px,-1px)}
@@ -66,62 +61,57 @@
   #bar{position:relative;height:14px;flex:1;background:#ffffff24;border-radius:999px;overflow:hidden}
   #fill{position:absolute;inset:0;width:100%;background:linear-gradient(90deg,var(--hot),var(--accent))}
   #q{font-size:30px;margin:18px 0 12px}
-  /* make options more opaque for contrast */
+
+  /* options more opaque for contrast */
   .opt{
-    display:block;width:100%;text-align:left;margin:10px 0;padding:18px 20px;
-    border-radius:18px;border:1px solid #ffffff3a;color:var(--fg);
-    background:rgba(14,14,20,.78);
-    box-shadow:0 6px 24px rgba(0,0,0,.35), 0 1px 0 rgba(255,255,255,.06) inset;
-    cursor:pointer;font-weight:800;
-    transition:transform .06s ease, background .15s ease, border-color .15s ease, box-shadow .15s ease;
+    display:block;width:100%;text-align:left;margin:10px 0;padding:18px 20px;border-radius:18px;
+    border:1px solid #ffffff3a;color:var(--fg);background:rgba(14,14,20,.78);
+    box-shadow:0 6px 24px rgba(0,0,0,.35),0 1px 0 rgba(255,255,255,.06) inset;
+    cursor:pointer;font-weight:800;transition:transform .06s ease,background .15s,border-color .15s,box-shadow .15s
   }
-  .opt:hover{transform:translateY(-1px); background:rgba(18,18,26,.9)}
+  .opt:hover{transform:translateY(-1px);background:rgba(18,18,26,.9)}
   .opt.ok{background:#134323;border-color:#2fff8f;box-shadow:0 0 36px rgba(46,255,143,.35)}
   .opt.no{background:#441425;border-color:#ff5b8b;box-shadow:0 0 36px rgba(255,91,139,.34)}
   .locked .opt{pointer-events:none;opacity:.95}
 
   .shake{animation:shake .65s cubic-bezier(.36,.07,.19,.97)}
   @keyframes shake{
-    10%{transform:translate(-10px, 5px) rotate(-0.9deg)}
-    20%{transform:translate(12px, -6px) rotate(.9deg)}
-    30%{transform:translate(-12px, 6px) rotate(-.9deg)}
-    40%{transform:translate(9px, -5px) rotate(.7deg)}
-    50%{transform:translate(-8px, 4px) rotate(-.6deg)}
-    60%{transform:translate(6px, 0px) rotate(.5deg)}
-    70%{transform:translate(-6px, 4px) rotate(-.4deg)}
-    80%{transform:translate(5px, -4px) rotate(.3deg)}
-    90%{transform:translate(-4px, 3px) rotate(-.2deg)}
+    10%{transform:translate(-10px,5px) rotate(-0.9deg)}
+    20%{transform:translate(12px,-6px) rotate(.9deg)}
+    30%{transform:translate(-12px,6px) rotate(-.9deg)}
+    40%{transform:translate(9px,-5px) rotate(.7deg)}
+    50%{transform:translate(-8px,4px) rotate(-.6deg)}
+    60%{transform:translate(6px,0) rotate(.5deg)}
+    70%{transform:translate(-6px,4px) rotate(-.4deg)}
+    80%{transform:translate(5px,-4px) rotate(.3deg)}
+    90%{transform:translate(-4px,3px) rotate(-.2deg)}
   }
 
   #done{display:none;margin-top:22px}
   table{width:100%;border-collapse:collapse;margin-top:8px}
   th,td{padding:8px 10px;border-bottom:1px solid #ffffff22;text-align:left}
-  input[type="text"]{
-    background:#ffffff14;border:1px solid #ffffff33;color:var(--fg);
-    padding:10px;border-radius:10px
-  }
-  .btn{
-    display:inline-block;margin:8px 6px 0 0;padding:10px 12px;border-radius:10px;
-    border:1px solid #ffffff38;background:#ffffff18;color:var(--fg);cursor:pointer
-  }
+  input[type="text"]{background:#ffffff14;border:1px solid #ffffff33;color:var(--fg);padding:10px;border-radius:10px}
+  .btn{display:inline-block;margin:8px 6px 0 0;padding:10px 12px;border-radius:10px;border:1px solid #ffffff38;background:#ffffff18;color:var(--fg);cursor:pointer}
   .btn:hover{background:#ffffff22}
   small{opacity:.75}
 
-  /* canvases */
   canvas{position:fixed;inset:0;pointer-events:none;z-index:0}
   #fx2{position:fixed;inset:0;pointer-events:none;z-index:0}
   #flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:3}
 
-  /* start overlay */
+  /* start overlay: no dark veil so background stays visible */
   #start{
-    position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:2
+    position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:2;pointer-events:auto
   }
   #start .panel{
-    background:rgba(18,18,26,.92); border:1px solid #ffffff3a; border-radius:16px; padding:26px 22px;
-    box-shadow:0 10px 40px rgba(0,0,0,.45);
-    max-width:520px;width:92%
+    background:rgba(18,18,26,.9); border:1px solid #ffffff3a; border-radius:16px; padding:22px;
+    box-shadow:0 10px 40px rgba(0,0,0,.45); width:min(92%,880px)
   }
-  #start h2{margin:0 0 10px}
+  #start h2{margin:0 0 8px}
+
+  /* start leaderboard */
+  #start .lb{margin-top:12px;max-height:260px;overflow:auto;border-radius:10px;border:1px solid #ffffff25}
+  #start .lb table{margin:0}
 </style>
 
 <body class="fx">
@@ -129,11 +119,19 @@
   <canvas id="fx"></canvas>
   <canvas id="fx2"></canvas>
 
+  <!-- START SCREEN: transparent backdrop, shows moving bg + leaderboard -->
   <div id="start">
     <div class="panel">
       <h2>Unhinged Trivia</h2>
-      <p>Click play to begin. Leaderboard is saved locally for now.</p>
-      <button id="play" class="btn">Play</button>
+      <p>Click <b>Start Game</b> to begin. Leaderboard is saved locally for now.</p>
+      <button id="play" class="btn">Start Game</button>
+
+      <div class="lb">
+        <table id="lbStart">
+          <thead><tr><th>#</th><th>Name</th><th>Score</th><th>Date</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -146,7 +144,7 @@
         <div id="bar"><div id="fill"></div></div>
       </div>
 
-      <h2 id="q">Loading...</h2>
+      <h2 id="q">Click Start Game to begin</h2>
       <div id="opts"></div>
 
       <div id="done">
@@ -165,35 +163,26 @@
   </div>
 
 <script>
-/* =========================================================
-   Tuning
-========================================================= */
-const FX = { scale: 14, shake: 1.5 }; // scale controls overall particle counts
+/* ================= Tuning ================= */
+const FX = { scale: 14, shake: 1.5 };
 const CSV_URL = "https://raw.githubusercontent.com/Grouchy-Lawn-Chair/TriviaTrivia/main/questions.csv";
 
-/* =========================================================
-   Elements and state
-========================================================= */
+/* ================= Elements / State ================= */
 const $  = s => document.querySelector(s);
 const cam = $("#cam"), title = $("#title"), wrap = $("#wrap"), qEl = $("#q"), optsEl = $("#opts");
 const idxEl = $("#idx"), scoreEl = $("#score"), finalEl = $("#final");
 const fill = $("#fill"), flashEl = $("#flash");
 let Q = [], i = 0, score = 0, tried = new Set(), answered = false, limit = 20, left = 0, timer = 0;
 
-/* =========================================================
-   Canvas setup
-========================================================= */
+/* ================= Canvases ================= */
 const c = document.getElementById("fx"), ctx = c.getContext("2d");
 let W,H,parts=[]; function resize(){W=c.width=innerWidth;H=c.height=innerHeight} addEventListener("resize",resize); resize();
-
 const c2 = document.getElementById("fx2"), g2 = c2.getContext("2d");
 function resize2(){c2.width=innerWidth; c2.height=innerHeight; g2.globalCompositeOperation="lighter"} addEventListener("resize",resize2); resize2();
 
-/* =========================================================
-   Particles and helpers
-========================================================= */
+/* ================= Particles ================= */
 function push(p){parts.push(p);return p}
-function crowd(){return Math.max(.6, Math.min(1.3, innerWidth*innerHeight/ (1280*720)))}
+function crowd(){return Math.max(.6, Math.min(1.3, innerWidth*innerHeight/(1280*720)))}
 
 function spawnSpark(x,y,color,count){
   count=Math.round(count*FX.scale*crowd()*.6);
@@ -228,18 +217,14 @@ function spawnDebris(x,y,count){
 function neonPulse(x,y,rad,color){push({x,y,rad:rad,a:1,col:color,type:"neon"})}
 function ring(x,y,w=14){push({x,y,r:w,a:1,col:"rgba(255,255,255,.98)",type:"ring"})}
 
-/* emoji assets and spawner */
-const emojis = {
-  emoji:["💥","✨","🔥","⚡","💫","🎉","🌟","🧨","🚀"],
-  food:["🍟","🍔","🌭","🍕","🥤","🍗"],
-  critter:["🐱","🐶","🦊","🐯","🦁","🐸"]
-};
+/* Emoji spawns */
+const emojis = { emoji:["💥","✨","🔥","⚡","💫","🎉","🌟","🧨","🚀"], food:["🍟","🍔","🌭","🍕","🥤","🍗"], critter:["🐱","🐶","🦊","🐯","🦁","🐸"] };
 const EMOJI_PART_LIMIT = 30;
 const emojiCount = () => parts.filter(p=>p.type==="emoji").length;
 
 function spawnEmojiRain(kind){
   const set = emojis[kind] || emojis.emoji;
-  let n = Math.round(6 * crowd()); // lighter waves
+  let n = Math.round(6 * crowd()); // light
   n = Math.max(0, Math.min(n, EMOJI_PART_LIMIT - emojiCount()));
   for (let i = 0; i < n; i++) {
     const side = ["top","left","right","bottom"][Math.floor(Math.random()*4)];
@@ -249,7 +234,7 @@ function spawnEmojiRain(kind){
     else if (side === "left")  { x = -30; y = Math.random()*H;  vx =  2 + Math.random()*3;  vy = (Math.random()*2-1)*2; }
     else                       { x = W+30; y = Math.random()*H;  vx = -2 - Math.random()*3;  vy = (Math.random()*2-1)*2; }
 
-    const ch = set[i % set.length];
+    const ch = set[(i + Math.floor(Math.random()*set.length)) % set.length];
     parts.push({ type:"emoji", ch, x, y, vx, vy, r:18+Math.random()*20, a:1, rot:Math.random()*6.28, vr:(Math.random()-.5)*.05 });
   }
 }
@@ -285,17 +270,10 @@ function tick(){
       ctx.fillRect(-p.w*.5,-p.h*.5,p.w,p.h); ctx.restore();
     }else if(p.type==="emoji"){
       p.x += p.vx; p.y += p.vy; p.vy += .06; p.rot += p.vr; p.a *= .995;
-      ctx.save();
-      ctx.translate(p.x, p.y);
-      ctx.rotate(p.rot);
-      ctx.font = `${p.r}px system-ui, emoji`;
-      ctx.textBaseline = "middle";
-      ctx.textAlign = "center";
-      ctx.globalAlpha = p.a;
-      ctx.fillText(p.ch, 0, 0);
-      ctx.restore();
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot);
+      ctx.font = `${p.r}px system-ui, emoji`; ctx.textBaseline="middle"; ctx.textAlign="center"; ctx.globalAlpha=p.a;
+      ctx.fillText(p.ch, 0, 0); ctx.restore();
     }else{
-      // sparks and fire balls
       p.x+=p.vx; p.y+=p.vy; p.vy+=p.type==="f"?0.22:0.12; p.a*=.97; p.r*=.987;
       ctx.globalAlpha=Math.max(0,p.a); ctx.fillStyle=p.col; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
     }
@@ -309,9 +287,8 @@ tick();
 const bolts=[];
 function lightning(x,y){
   let sx=Math.random()*innerWidth, sy=-10, tx=x, ty=y;
-  let p={pts:[], a:1}; bolts.push(p); let cx=sx, cy=sy;
-  const steps=22;
-  for(let i=0;i<steps;i++){ const nx=cx+(tx-cx)/2+(Math.random()*160-80); const ny=cy+(ty-cy)/2+(Math.random()*80); p.pts.push([cx,cy,nx,ny]); cx=nx; cy=ny; }
+  let p={pts:[], a:1}; bolts.push(p); let cx=sx, cy=sy; const steps=22;
+  for(let i=0;i<steps;i++){ const nx=cx+(tx-cx)/2+(Math.random()*160-80); const ny=cy+(ty-cy)/2+(Math.random()*80); p.pts.push([cx,cy,nx,ny]); cx=nx; cy=ny }
 }
 function tick2(){
   g2.clearRect(0,0,innerWidth,innerHeight);
@@ -327,24 +304,16 @@ function tick2(){
 }
 tick2();
 
-/* flash and camera */
+/* flash + camera */
 function flash(strength=1){flashEl.style.opacity=String(Math.min(1,strength));flashEl.style.transition="opacity .25s";requestAnimationFrame(()=>{flashEl.style.opacity="0"})}
 function camShake(ms=450,amp=15){const t0=performance.now(), A=amp*FX.shake; function f(t){const k=Math.max(0,1-(t-t0)/ms); const x=(Math.random()*2-1)*A*k, y=(Math.random()*2-1)*A*k, r=(Math.random()*2-1)*0.9*k; cam.style.transform=`translate(${x}px,${y}px) rotate(${r}deg)`; if(k>0) requestAnimationFrame(f); else cam.style.transform=""} requestAnimationFrame(f)}
 
-/* title micro animation chooser, max 20s per effect before switching */
-function randomTitleNudge(){
-  const pool=["tPulse","tTilt","tHue","tFlicker","tGlitch"];
-  const cls=pool[Math.floor(Math.random()*pool.length)];
-  title.classList.add(cls);
-  setTimeout(()=>title.classList.remove(cls), 1200);
-}
+/* title micro anim chooser */
+function randomTitleNudge(){const pool=["tPulse","tTilt","tHue","tFlicker","tGlitch"]; const cls=pool[Math.floor(Math.random()*pool.length)]; title.classList.add(cls); setTimeout(()=>title.classList.remove(cls),1200)}
 setInterval(()=>{ if(Math.random()<.9) randomTitleNudge() }, 6000);
 
-/* =========================================================
-   Audio
-========================================================= */
-let AC;
-function audio(){AC=AC||new (window.AudioContext||window.webkitAudioContext)();return AC}
+/* audio */
+let AC; function audio(){AC=AC||new (window.AudioContext||window.webkitAudioContext)();return AC}
 function sBoom(){try{const ac=audio(); const g=ac.createGain(); g.gain.value=.18; g.connect(ac.destination);
   const o=ac.createOscillator(); o.type="sine"; o.frequency.setValueAtTime(120,ac.currentTime); o.frequency.exponentialRampToValueAtTime(40,ac.currentTime+.35); o.connect(g);
   const n=ac.createBufferSource(); const b=ac.createBuffer(1,ac.sampleRate*.4,ac.sampleRate); const ch=b.getChannelData(0);
@@ -358,15 +327,13 @@ function sNuke(){try{const ac=audio(); const g=ac.createGain(); g.gain.value=.28
   g.gain.setValueAtTime(.28,ac.currentTime); g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+1.2);
   o.start(); n.start(); o.stop(ac.currentTime+1.2);}catch(_){}} 
 function sBuzz(){try{const ac=audio();const o=ac.createOscillator(),g=ac.createGain();o.type="square";o.frequency.value=140;g.gain.value=.12;o.connect(g);g.connect(ac.destination);o.start();g.gain.exponentialRampToValueAtTime(0.0001,ac.currentTime+.24);o.stop(ac.currentTime+.24)}catch(_){}} 
-function sPing(){try{const ac=audio();const o=ac.createOscillator(),g=ac.createGain();o.type="triangle";o.frequency.setValueAtTime(800,ac.currentTime);o.frequency.exponentialRampToValueAtTime(1600,ac.currentTime+.12);g.gain.value=.08;o.connect(g);g.connect(ac.destination);o.start();g.gain.exponentialRampToValueAtTime(0.0001,ac.currentTime+.25);o.stop(ac.currentTime+.25)}catch(_){}} 
+function sPing(){try{const ac=audio();const o=ac.createOscillator(),g=ac.createGain();o.type="triangle";o.frequency.setValueAtTime(800,ac.currentTime);o.frequency.exponentialRampToValueAtTime(1600,ac.currentTime+.12);g.gain.value=.08;o.connect(g);g.connect(ac.destination);o.start();g.gain.exponentialRampToValueAtTime(0.0001,ac.currentTime+.25);o.stop(ac.currentTime+.25)}catch(_){}}
 function sPop(){try{const ac=audio(); const g=ac.createGain(); g.gain.value=.1; g.connect(ac.destination);
   const o=ac.createOscillator(); o.type="square"; o.frequency.value=420; o.connect(g);
   g.gain.setValueAtTime(.1,ac.currentTime); g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+.18);
   o.start(); o.stop(ac.currentTime+.18);}catch(_){}} 
 
-/* =========================================================
-   CSV parsing and game flow
-========================================================= */
+/* CSV + flow */
 function parseCSV(txt){
   const rows=[];let row=[],cell="",inQ=false;
   for(let i=0;i<txt.length;i++){
@@ -385,12 +352,16 @@ function shuffle(a){for(let j=a.length-1;j>0;j--){const k=Math.floor(Math.random
 function setTimer(sec){limit=sec; left=sec; clearInterval(timer); fill.style.width="100%"; timer=setInterval(()=>{left=Math.max(0,left-1); fill.style.width=Math.round(100*left/limit)+"%"; if(left<=0){clearInterval(timer); reveal("")}},1000)}
 function setLocked(on){wrap.classList.toggle("locked",on); answered=on}
 
+/* start */
 let started=false;
 $("#play").onclick=()=>{ started=true; $("#start").style.display="none"; load() };
 
+/* keep start leaderboard visible */
+document.addEventListener("DOMContentLoaded", ()=>renderLBStart());
+
 async function load(){
   try{
-    if(!started){ qEl.textContent="Click play to start"; return }
+    if(!started){ qEl.textContent="Click Start Game to begin"; return }
     const t=await fetch(CSV_URL,{cache:"no-store"}).then(r=>r.text());
     Q=shuffle(parseCSV(t));
     if(!Q.length) throw Error("no questions");
@@ -403,44 +374,31 @@ function next(){
   const q=Q[i++]; idxEl.textContent=i+"/"+Q.length; qEl.textContent=q.question; tried.clear(); setLocked(false); setTimer(q.timeLimit);
   optsEl.innerHTML="";
   ["A","B","C","D"].forEach(L=>{
-    const txt=q["option"+L];
-    if(!txt) return;
-    const b=document.createElement("button");
-    b.className="opt"; b.textContent=L+") "+txt;
+    const txt=q["option"+L]; if(!txt) return;
+    const b=document.createElement("button"); b.className="opt"; b.textContent=L+") "+txt;
     b.onclick=()=>reveal(L,q,b); optsEl.appendChild(b)
   })
 }
 
-/* =========================================================
-   Big effects, chosen with no repeats
-========================================================= */
-function effectNuke(x,y){ flash(1); camShake(700,28); sNuke(); neonPulse(x,y,120, "rgba(45,252,255,.55)"); neonPulse(x,y,260, "rgba(255,45,117,.40)"); ring(x,y,40); ring(x,y,120); spawnFire(x,y,240); spawnSpark(x,y,"rgba(255,255,255,.98)",140); spawnStreaks(x,y,100); spawnDebris(x,y,60) }
+/* big effects with no repeats within the last 3 */
+function effectNuke(x,y){ flash(1); camShake(700,28); sNuke(); neonPulse(x,y,120,"rgba(45,252,255,.55)"); neonPulse(x,y,260,"rgba(255,45,117,.40)"); ring(x,y,40); ring(x,y,120); spawnFire(x,y,240); spawnSpark(x,y,"rgba(255,255,255,.98)",140); spawnStreaks(x,y,100); spawnDebris(x,y,60) }
 function effectNeonStorm(x,y){ flash(.7); camShake(520,22); sBoom(); lightning(x,y); lightning(x+120,y-40); spawnSpark(x,y,"rgba(45,252,255,.98)",120); spawnSpark(x,y,"rgba(255,45,117,.98)",120); ring(x,y,28); neonPulse(x,y,220,"rgba(45,252,255,.35)") }
 function effectConfettiBurst(x,y){ camShake(420,16); sPing(); spawnConfettiCircular(x,y,160); ring(x,y,22) }
 function effectShockwave(x,y){ flash(.6); camShake(480,20); sBoom(); ring(x,y,36); spawnFire(x,y,160) }
 function effectStreakCascade(x,y){ camShake(340,16); sPing(); spawnStreaks(x,y,140); ring(x,y,18) }
 function effectDebrisBlast(x,y){ camShake(520,22); sBoom(); spawnDebris(x,y,110); spawnSpark(x,y,"rgba(255,255,255,.95)",80); ring(x,y,26) }
-function effectEmojiStorm(x,y){
-  camShake(320, 12); sPop();
-  let waves = 0;
-  const run = () => {
-    if (waves++ > 16) return;
-    const kinds = ["emoji","food","critter"];
-    spawnEmojiRain(kinds[Math.floor(Math.random()*kinds.length)]);
-    setTimeout(run, 60);
-  };
-  run();
-}
+function effectEmojiStorm(x,y){ camShake(320,12); sPop(); let waves=0; const run=()=>{ if(waves++>16) return; const kinds=["emoji","food","critter"]; spawnEmojiRain(kinds[Math.floor(Math.random()*kinds.length)]); setTimeout(run,60) }; run() }
 
 const EFFECTS=[effectNuke,effectNeonStorm,effectConfettiBurst,effectShockwave,effectStreakCascade,effectDebrisBlast,effectEmojiStorm];
-let lastFx=-1;
+const fxHistory=[]; // store last 3 indices
 function pickFx(){
-  let idx = Math.floor(Math.random()*EFFECTS.length);
-  if(idx===lastFx) idx = (idx+1)%EFFECTS.length;
-  lastFx = idx; return EFFECTS[idx];
+  const all = EFFECTS.map((_,i)=>i);
+  const choices = all.filter(i=>!fxHistory.includes(i));
+  const idx = choices[Math.floor(Math.random()*choices.length)];
+  fxHistory.push(idx); if(fxHistory.length>3) fxHistory.shift();
+  return EFFECTS[idx];
 }
 
-/* answer handling */
 function reveal(L,q,btn){
   if(answered) return;
   const correct=L===q.correct;
@@ -448,8 +406,7 @@ function reveal(L,q,btn){
     setLocked(true); if(btn) btn.classList.add("ok"); clearInterval(timer);
     const speed=left/limit, base=Math.round(1500*speed), penalty=tried.size*200, pts=Math.max(50, base-penalty);
     score+=pts; scoreEl.textContent=score;
-    let x=innerWidth*.5,y=150;
-    if(btn){const r=btn.getBoundingClientRect(); x=r.left+r.width*.5; y=r.top+r.height*.5}
+    let x=innerWidth*.5,y=150; if(btn){const r=btn.getBoundingClientRect(); x=r.left+r.width*.5; y=r.top+r.height*.5}
     pickFx()(x,y);
     setTimeout(next,540);
   }else{
@@ -460,20 +417,25 @@ function reveal(L,q,btn){
   }
 }
 
-function finish(){ clearInterval(timer); setLocked(true); finalEl.textContent=score; document.getElementById("done").style.display="block"; renderLB() }
+function finish(){ clearInterval(timer); setLocked(true); finalEl.textContent=score; $("#done").style.display="block"; renderLB() }
 
-/* =========================================================
-   Local leaderboard
-========================================================= */
+/* ================= Local Leaderboard (also shown on start) ================= */
 const LB_KEY="unhinged_lb";
 function getLB(){ try{return JSON.parse(localStorage.getItem(LB_KEY)||"[]")}catch(_){return[]} }
 function setLB(a){ localStorage.setItem(LB_KEY, JSON.stringify(a.slice(0,20))) }
-function addLB(name,score){ const a=getLB(); a.push({name,score,ts:Date.now()}); a.sort((x,y)=>y.score-x.score); setLB(a); renderLB() }
-function renderLB(){ const tbody=document.querySelector("#lb tbody"); tbody.innerHTML=""; getLB().slice(0,10).forEach((r,idx)=>{ const tr=document.createElement("tr"); const d=new Date(r.ts).toLocaleDateString(); tr.innerHTML=`<td>${idx+1}</td><td>${escapeHtml(r.name||"Player")}</td><td>${r.score}</td><td>${d}</td>`; tbody.appendChild(tr) }) }
+function addLB(name,score){ const a=getLB(); a.push({name,score,ts:Date.now()}); a.sort((x,y)=>y.score-x.score); setLB(a); renderLB(); renderLBStart() }
+function renderLB(){
+  const tbody=document.querySelector("#lb tbody"); if(!tbody) return;
+  tbody.innerHTML=""; getLB().slice(0,10).forEach((r,idx)=>{ const tr=document.createElement("tr"); const d=new Date(r.ts).toLocaleDateString(); tr.innerHTML=`<td>${idx+1}</td><td>${escapeHtml(r.name||"Player")}</td><td>${r.score}</td><td>${d}</td>`; tbody.appendChild(tr) })
+}
+function renderLBStart(){
+  const tbody=$("#lbStart tbody"); if(!tbody) return;
+  tbody.innerHTML=""; getLB().slice(0,10).forEach((r,idx)=>{ const tr=document.createElement("tr"); const d=new Date(r.ts).toLocaleDateString(); tr.innerHTML=`<td>${idx+1}</td><td>${escapeHtml(r.name||"Player")}</td><td>${r.score}</td><td>${d}</td>`; tbody.appendChild(tr) })
+}
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
-document.getElementById("saveScore").onclick=()=>{const n=document.getElementById("name").value.trim()||"Player"; addLB(n,score); renderLB()};
+$("#saveScore").onclick=()=>{const n=$("#name").value.trim()||"Player"; addLB(n,score)};
 
-/* do not start until Play is clicked */
-qEl.textContent = "Click play to start";
+/* initial text */
+qEl.textContent="Click Start Game to begin";
 </script>
 </body>
